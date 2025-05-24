@@ -1,0 +1,1034 @@
+'use client';
+
+import { useParams, useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { Tabs } from '@/components/ui/tabs';
+import { useToast } from '@/components/ui/use-toast';
+import { AuthGuard } from '@/components/auth/auth-guard';
+import { useAuth } from '@/lib/auth-context';
+import { ClassroomService, ClassSchedule } from '@/lib/api/classes';
+
+// Import các component đã refactor
+import {
+  ClassDetailHeader,
+  ClassInfoCards,
+  ClassTabNav,
+  AnnouncementsTab,
+  AssignmentsTab,
+  OnlineMeetingTab,
+  MaterialsTab,
+  StudentsTab,
+  SettingsTab,
+  AddStudentModal,
+  ScheduleModal,
+  Announcement,
+  ClassDetail,
+  CustomTabsContent,
+  AnimatedPageWrapper
+} from '@/components/classes';
+
+import { ClassFormModal } from '@/components/classes/modals/class-form-modal';
+// Chi giữ lại mock data cho announcements
+const mockAnnouncements = [
+  {
+    id: 1,
+    title: 'Thông báo kiểm tra giữa kỳ',
+    content: 'Kiểm tra giữa kỳ sẽ diễn ra vào ngày 25/03/2024. Nội dung từ chương 1 đến chương 3.',
+    date: '2024-03-15T08:00:00',
+    isImportant: true,
+    author: 'Nguyễn Văn A',
+    authorRole: 'Teacher',
+    comments: [
+      {
+        id: 101,
+        content: 'Thưa thầy, em có thể xin tài liệu ôn tập được không ạ?',
+        date: '2024-03-15T10:30:00',
+        author: 'Trần Thị B',
+        authorRole: 'student'
+      },
+      {
+        id: 102,
+        content: 'Được em, thầy sẽ đăng tài liệu ôn tập vào ngày mai.',
+        date: '2024-03-15T11:00:00',
+        author: 'Nguyễn Văn A',
+        authorRole: 'Teacher'
+      }
+    ]
+  },
+  {
+    id: 2,
+    title: 'Thay đổi lịch học',
+    content: 'Lớp học ngày 20/03 sẽ được dời sang 21/03 do trùng với hoạt động của trường.',
+    date: '2024-03-14T10:00:00',
+    isImportant: true,
+    author: 'Nguyễn Văn A',
+    authorRole: 'Teacher',
+    comments: []
+  },
+  {
+    id: 3,
+    title: 'Tài liệu ôn tập',
+    content: 'Đã cập nhật tài liệu ôn tập cho bài kiểm tra sắp tới.',
+    date: '2024-03-13T14:00:00',
+    isImportant: false,
+    author: 'Nguyễn Văn A',
+    authorRole: 'Teacher',
+    comments: []
+  },
+  {
+    id: 4,
+    title: 'Nhắc nhở về bài tập',
+    content: 'Các em nhớ hoàn thành bài tập về nhà trước buổi học tới.',
+    date: '2024-03-12T09:00:00',
+    isImportant: false,
+    author: 'Nguyễn Văn A',
+    authorRole: 'Teacher',
+    comments: []
+  },
+  {
+    id: 5,
+    title: 'Kết quả kiểm tra',
+    content: 'Đã cập nhật điểm kiểm tra của tuần trước.',
+    date: '2024-03-11T16:00:00',
+    isImportant: false,
+    author: 'Nguyễn Văn A',
+    authorRole: 'Teacher',
+    comments: []
+  }
+];
+
+// Cấu trúc cơ bản của class detail, sẽ được điền bởi API
+const emptyClassDetail: ClassDetail = {
+  id: '',
+  name: '',
+  subject: '',
+  teacher: '',
+  schedule: '',
+  time: '',
+  totalStudents: 0,
+  currentUnit: '',
+  nextClass: new Date().toISOString(),
+  status: 'inactive',
+  description: '',
+  announcements: mockAnnouncements,
+  assignments: [],
+  materials: [],
+  students: [],
+  isOnlineMeetingActive: false,
+  meetingId: 'ae-minh-cu-the-thoi-he-he',
+  classroomId: ''
+};
+
+export default function ClassDetailPage() {
+  const params = useParams();
+  const router = useRouter();
+  const { toast } = useToast();
+  const { role } = useAuth();
+  const classId = params.id as string;
+
+  // Các state quản lý dữ liệu và UI
+  const [classDetail, setClassDetail] = useState(emptyClassDetail);
+  const [activeTab, setActiveTab] = useState('announcements');
+  const [isMeetingActive, setIsMeetingActive] = useState(false);
+  const [isLoadingMeeting, setIsLoadingMeeting] = useState(false);
+  
+  // State cho các modal
+  const [showAddStudentModal, setShowAddStudentModal] = useState(false);
+  const [showEditClassModal, setShowEditClassModal] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  
+  // State mới cho lịch học
+  const [classSchedules, setClassSchedules] = useState<ClassSchedule[]>([]);
+  const [isLoadingSchedules, setIsLoadingSchedules] = useState(false);
+  
+  // Form state cho các modal
+  const [newStudentEmail, setNewStudentEmail] = useState('');
+  const [studentsToAdd, setStudentsToAdd] = useState<string[]>([]);
+  const [editClassForm, setEditClassForm] = useState({
+    className: '',
+    classSubject: '',
+    classDescription: '',
+    schedules: [{
+      day: '',
+      time: '',
+      id: 1
+    }]
+  });
+  const [scheduleForm, setScheduleForm] = useState({
+    schedule: '',
+    time: '',
+    meetingLink: ''
+  });
+
+  // State cho announcement
+  const [newAnnouncement, setNewAnnouncement] = useState({
+    title: '',
+    content: '',
+    isImportant: false
+  });
+  const [editingAnnouncementId, setEditingAnnouncementId] = useState<number | null>(null);
+  const [editingAnnouncement, setEditingAnnouncement] = useState({
+    title: '',
+    content: '',
+    isImportant: false
+  });
+  const [visibleAnnouncements, setVisibleAnnouncements] = useState(5);
+
+  // State cho user data
+  const [userData, setUserData] = useState({
+    id: 1,
+    name: 'Nguyễn Văn A',
+    role: role
+  });
+
+  // Load dữ liệu từ API
+  useEffect(() => {
+    const fetchClassData = async () => {
+      try {
+        if (!classId) return;
+        
+        // Lấy thông tin lớp học từ API
+        const classroomData = await ClassroomService.getClassroomById(classId);
+        
+        // Kiểm tra trạng thái buổi học trực tuyến
+        setIsMeetingActive(classroomData.isOnlineMeeting === 'Active');
+        
+        // Lấy danh sách học sinh từ API
+        const studentsData = await ClassroomService.getStudentsByClassroomId(classId as string);
+        
+        // Lấy lịch học của lớp
+        setIsLoadingSchedules(true);
+        const schedulesData = await ClassroomService.getSchedulesByClassroomId(classId as string);
+        setClassSchedules(schedulesData);
+        setIsLoadingSchedules(false);
+        
+        // Chuyển đổi dữ liệu học sinh sang định dạng phù hợp với UI
+        const formattedStudents = Array.isArray(studentsData) 
+          ? studentsData.map(student => ({
+              id: student.studentId,
+              name: student.studentName,
+              avatar: student.studentAvatar || `/avatars/default-${student.studentGender === 'Male' ? 'male' : 'female'}.jpg`,
+              email: student.studentEmail,
+              joinedAt: student.joinedAt,
+              studentDob: student.studentDob,
+              status: student.status || 'Active' // Mặc định là Active nếu không có trạng thái
+            }))
+          : [];
+        
+        // Trích xuất thông tin từ mô tả
+        let extractedSubject = 'Không xác định';
+        const subjectMatch = classroomData.description.match(/Môn học: (.*?)(\n|$)/);
+        if (subjectMatch) {
+          extractedSubject = subjectMatch[1];
+        }
+        
+        // Định dạng lịch học và tính thời gian buổi học tiếp theo
+        const dayNames = ["Chủ nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
+        const formattedSchedule = schedulesData.length > 0 
+          ? Array.from(new Set(schedulesData.map(s => dayNames[s.dayOfWeek]))).join(', ')
+          : '';
+        
+        const formattedTime = schedulesData.length > 0 
+          ? Array.from(new Set(schedulesData.map(s => 
+              `${s.startTime.substring(0, 5)}-${s.endTime.substring(0, 5)}`
+            ))).join(', ')
+          : '';
+        
+        // Tính thời gian buổi học tiếp theo dựa trên lịch học
+        let nextClassDate = new Date(); // Mặc định là ngày hiện tại
+        
+        if (schedulesData.length > 0) {
+          const now = new Date();
+          const currentDay = now.getDay(); // 0 = Chủ nhật, 1 = Thứ 2, ...
+          const currentHour = now.getHours();
+          const currentMinute = now.getMinutes();
+          
+          // Sắp xếp lịch học theo thứ tự ngày trong tuần
+          const sortedSchedules = [...schedulesData].sort((a, b) => {
+            if (a.dayOfWeek !== b.dayOfWeek) {
+              return a.dayOfWeek - b.dayOfWeek;
+            }
+            return a.startTime.localeCompare(b.startTime);
+          });
+          
+          // Tìm buổi học tiếp theo
+          let foundNextClass = false;
+          
+          // Đầu tiên tìm trong tuần hiện tại
+          for (const schedule of sortedSchedules) {
+            const [scheduleHour, scheduleMinute] = schedule.startTime.split(':').map(Number);
+            
+            if (
+              // Nếu là ngày trong tương lai trong tuần này
+              (schedule.dayOfWeek > currentDay) ||
+              // Hoặc là ngày hiện tại nhưng thời gian trong tương lai
+              (schedule.dayOfWeek === currentDay && 
+                (scheduleHour > currentHour || 
+                  (scheduleHour === currentHour && scheduleMinute > currentMinute)))
+            ) {
+              // Tìm thấy buổi học tiếp theo trong tuần này
+              const daysToAdd = (schedule.dayOfWeek - currentDay + 7) % 7;
+              nextClassDate = new Date(now);
+              nextClassDate.setDate(now.getDate() + daysToAdd);
+              nextClassDate.setHours(scheduleHour, scheduleMinute, 0, 0);
+              foundNextClass = true;
+              break;
+            }
+          }
+          
+          // Nếu không tìm thấy trong tuần này, lấy buổi học đầu tiên của tuần sau
+          if (!foundNextClass && sortedSchedules.length > 0) {
+            const firstSchedule = sortedSchedules[0];
+            const [scheduleHour, scheduleMinute] = firstSchedule.startTime.split(':').map(Number);
+            
+            // Tính số ngày cần thêm để đến ngày tương ứng trong tuần tới
+            const daysToAdd = (firstSchedule.dayOfWeek - currentDay + 7) % 7;
+            
+            // Nếu là cùng ngày trong tuần, cộng thêm 7 ngày để lấy tuần sau
+            const actualDaysToAdd = (daysToAdd === 0) ? 7 : daysToAdd;
+            
+            nextClassDate = new Date(now);
+            nextClassDate.setDate(now.getDate() + actualDaysToAdd);
+            nextClassDate.setHours(scheduleHour, scheduleMinute, 0, 0);
+          }
+        }
+        
+        // Cập nhật thông tin lớp học từ API
+        setClassDetail({
+          ...emptyClassDetail, // Giữ lại thông báo và các thông tin khác chưa có trong API
+          id: classroomData.classroomId,
+          name: classroomData.name,
+          subject: extractedSubject,
+          description: classroomData.description,
+          status: classroomData.isOnlineMeeting === 'Active' ? 'active' : 'inactive',
+          schedule: formattedSchedule,
+          time: formattedTime,
+          nextClass: nextClassDate.toISOString(),
+          classroomId: classroomData.classroomId,
+          totalStudents: formattedStudents.length,
+          students: formattedStudents,
+          isOnlineMeetingActive: classroomData.isOnlineMeeting === 'Active'
+        });
+        
+        // Cập nhật form chỉnh sửa
+        setEditClassForm({
+          className: classroomData.name,
+          classSubject: extractedSubject,
+          classDescription: classroomData.description.replace(/Môn học: .*?(\n\n|$)/, ''),
+          schedules: [
+            {
+              day: 'Đang cập nhật',
+              time: 'Đang cập nhật',
+              id: 1
+            }
+          ]
+        });
+        
+      } catch (error: any) {
+        console.error('Lỗi khi lấy thông tin lớp học:', error);
+        toast({
+          variant: 'destructive',
+          title: 'Lỗi',
+          description: error.message || 'Không thể tải thông tin lớp học',
+        });
+      }
+    };
+    
+    fetchClassData();
+  }, [classId, toast]);
+
+  // Helper functions
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('vi-VN', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getNextClassStatus = (nextClass: string) => {
+    const now = new Date();
+    const next = new Date(nextClass);
+    const diffHours = (next.getTime() - now.getTime()) / (1000 * 60 * 60);
+    const diffMinutes = (next.getTime() - now.getTime()) / (1000 * 60);
+    
+    if (diffHours < 0) {
+      return { text: 'Đã kết thúc', color: 'text-gray-500' };
+    }
+    
+    if (diffMinutes <= 30) {
+      return { text: 'Sắp bắt đầu', color: 'text-amber-600' };
+    }
+    
+    if (diffHours <= 1) {
+      return { text: 'Trong vòng 1 giờ', color: 'text-amber-500' };
+    }
+    
+    if (diffHours <= 24) {
+      return { text: 'Trong ngày hôm nay', color: 'text-green-600' };
+    }
+    
+    if (diffHours <= 48) {
+      return { text: 'Trong ngày mai', color: 'text-blue-600' };
+    }
+    
+    const daysUntil = Math.floor(diffHours / 24);
+    if (daysUntil <= 7) {
+      return { text: `Trong ${daysUntil} ngày tới`, color: 'text-blue-500' };
+    }
+    
+    return { text: 'Sắp tới', color: 'text-blue-400' };
+  };
+
+  // Handler functions cho tab
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    // Update URL with tab parameter without full page reload
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', value);
+    window.history.pushState({}, '', url);
+  };
+
+  // Check for tab parameter in URL when component mounts
+  useEffect(() => {
+    // Extract tab from URL if present
+    const url = new URL(window.location.href);
+    const tabParam = url.searchParams.get('tab');
+    
+    // List of valid tabs
+    const validTabs = [
+      'announcements', 
+      'assignments', 
+      'meeting', 
+      'schedule', 
+      'materials', 
+      'students', 
+      'analytics', 
+      'settings'
+    ];
+    
+    // Set active tab if valid
+    if (tabParam && validTabs.includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, []);
+
+  // Handler functions cho thông báo
+  const handleCreateAnnouncement = () => {
+    if (!newAnnouncement.title || !newAnnouncement.content) {
+      toast({
+        title: 'Không thể tạo thông báo',
+        description: 'Vui lòng nhập tiêu đề và nội dung',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    const now = new Date();
+    const newAnnouncementObj = {
+      id: Date.now(),
+      title: newAnnouncement.title,
+      content: newAnnouncement.content,
+      date: now.toISOString(),
+      isImportant: newAnnouncement.isImportant,
+      author: userData.name,
+      authorRole: userData.role || 'Unknown',
+      comments: []
+    };
+
+    setClassDetail({
+      ...classDetail,
+      announcements: [newAnnouncementObj, ...classDetail.announcements]
+    });
+
+    resetNewAnnouncementForm();
+
+    toast({
+      title: 'Đã tạo thông báo',
+      description: 'Thông báo đã được đăng thành công',
+    });
+  };
+
+  const resetNewAnnouncementForm = () => {
+    setNewAnnouncement({
+      title: '',
+      content: '',
+      isImportant: false
+    });
+  };
+
+  const handleStartEditAnnouncement = (announcement: Announcement) => {
+    setEditingAnnouncementId(announcement.id);
+    setEditingAnnouncement({
+      title: announcement.title,
+      content: announcement.content,
+      isImportant: announcement.isImportant
+    });
+  };
+
+  const handleCancelEditAnnouncement = () => {
+    setEditingAnnouncementId(null);
+    setEditingAnnouncement({
+      title: '',
+      content: '',
+      isImportant: false
+    });
+  };
+
+  const handleSaveEditAnnouncement = () => {
+    if (!editingAnnouncement.title || !editingAnnouncement.content) {
+      toast({
+        title: 'Không thể cập nhật thông báo',
+        description: 'Vui lòng nhập tiêu đề và nội dung',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setClassDetail({
+      ...classDetail,
+      announcements: classDetail.announcements.map((announcement: Announcement) => 
+        announcement.id === editingAnnouncementId
+          ? { 
+              ...announcement, 
+              title: editingAnnouncement.title,
+              content: editingAnnouncement.content,
+              isImportant: editingAnnouncement.isImportant
+            }
+          : announcement
+      )
+    });
+
+    handleCancelEditAnnouncement();
+
+    toast({
+      title: 'Đã cập nhật thông báo',
+      description: 'Thông báo đã được cập nhật thành công',
+    });
+  };
+
+  const handleDeleteAnnouncement = (id: number) => {
+    setClassDetail({
+      ...classDetail,
+      announcements: classDetail.announcements.filter((announcement: Announcement) => announcement.id !== id)
+    });
+
+    toast({
+      title: 'Đã xóa thông báo',
+      description: 'Thông báo đã được xóa thành công',
+    });
+  };
+
+  const handleAddComment = (announcementId: number, comment: string) => {
+    if (!comment.trim()) return;
+
+    const now = new Date();
+    const newComment = {
+      id: Date.now(),
+      content: comment,
+      date: now.toISOString(),
+      author: userData.name,
+      authorRole: userData.role || 'Unknown'
+    };
+
+    setClassDetail({
+      ...classDetail,
+      announcements: classDetail.announcements.map((announcement: Announcement) => 
+        announcement.id === announcementId
+          ? { ...announcement, comments: [...announcement.comments, newComment] }
+          : announcement
+      )
+    });
+  };
+
+  const loadMoreAnnouncements = () => {
+    setVisibleAnnouncements(prev => prev + 5);
+  };
+
+  // Handlers cho cuộc họp trực tuyến
+  const startMeeting = async () => {
+    try {
+      if (!classDetail.classroomId) {
+        throw new Error('Không tìm thấy thông tin lớp học');
+      }
+      
+      setIsLoadingMeeting(true);
+      
+      // Gọi API để cập nhật trạng thái buổi học trực tuyến
+      await ClassroomService.updateClassroomStatus(classDetail.classroomId, 'Active');
+      
+      // Cập nhật state local
+      setIsMeetingActive(true);
+      setClassDetail({
+        ...classDetail,
+        isOnlineMeetingActive: true,
+        status: 'active'
+      });
+      
+      toast({
+        title: 'Đã bắt đầu buổi học trực tuyến',
+        description: 'Học sinh có thể tham gia ngay bây giờ',
+      });
+      
+    } catch (error: any) {
+      console.error('Lỗi khi bắt đầu buổi học trực tuyến:', error);
+      toast({
+        variant: "destructive",
+        title: 'Lỗi khi bắt đầu buổi học',
+        description: error.message || 'Không thể bắt đầu buổi học trực tuyến',
+      });
+    } finally {
+      setIsLoadingMeeting(false);
+    }
+  };
+
+  const endMeeting = async () => {
+    try {
+      if (!classDetail.classroomId) {
+        throw new Error('Không tìm thấy thông tin lớp học');
+      }
+      
+      setIsLoadingMeeting(true);
+      
+      // Gọi API để cập nhật trạng thái buổi học trực tuyến
+      await ClassroomService.updateClassroomStatus(classDetail.classroomId, 'Inactive');
+      
+      // Cập nhật state local
+      setIsMeetingActive(false);
+      setClassDetail({
+        ...classDetail,
+        isOnlineMeetingActive: false,
+        status: 'inactive'
+      });
+      
+      toast({
+        title: 'Đã kết thúc buổi học trực tuyến',
+        description: 'Buổi học trực tuyến đã kết thúc thành công',
+      });
+      
+    } catch (error: any) {
+      console.error('Lỗi khi kết thúc buổi học trực tuyến:', error);
+      toast({
+        variant: "destructive",
+        title: 'Lỗi khi kết thúc buổi học',
+        description: error.message || 'Không thể kết thúc buổi học trực tuyến',
+      });
+    } finally {
+      setIsLoadingMeeting(false);
+    }
+  };
+
+  // Handlers cho lớp học
+  const addStudentEmail = () => {
+    if (!newStudentEmail.trim()) return;
+    
+    if (newStudentEmail && !studentsToAdd.includes(newStudentEmail)) {
+      setStudentsToAdd([...studentsToAdd, newStudentEmail]);
+      setNewStudentEmail('');
+    }
+  };
+
+  const removeStudentEmail = (email: string) => {
+    setStudentsToAdd(studentsToAdd.filter(e => e !== email));
+  };
+
+  const handleInviteStudents = () => {
+    // This function is no longer needed since we're using direct API calls in the modal component
+    // It's kept for backward compatibility
+    console.log('Using direct API calls for student enrollment now');
+  };
+
+  const openEditClassModal = () => {
+    setShowEditClassModal(true);
+  };
+
+  const handleUpdateClass = async (formData: any) => {
+    try {
+      // Formdata already contains the updated classroom info from the API
+      // Just need to update the UI state
+      setClassDetail({
+        ...classDetail,
+        name: formData.name,
+        subject: formData.subject,
+        description: formData.description,
+        schedule: formData.schedules?.map((s: any) => s.day).join(', ') || classDetail.schedule,
+        time: formData.schedules?.map((s: any) => s.time).join(', ') || classDetail.time
+      });
+      
+      toast({
+        title: 'Cập nhật thành công',
+        description: 'Thông tin lớp học đã được cập nhật thành công!',
+      });
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Lỗi',
+        description: error.message || 'Không thể cập nhật thông tin lớp học',
+      });
+    }
+  };
+
+  const handleSaveSchedule = () => {
+    // API call để cập nhật lịch học
+    
+    setClassDetail({
+      ...classDetail,
+      schedule: scheduleForm.schedule,
+      time: scheduleForm.time
+    });
+    
+    toast({
+      title: 'Đã cập nhật lịch học',
+      description: 'Lịch học đã được cập nhật thành công',
+    });
+    
+    setShowScheduleModal(false);
+  };
+
+  // Hàm cập nhật danh sách lịch học
+  const handleSchedulesUpdated = (updatedSchedules: ClassSchedule[]) => {
+    setClassSchedules(updatedSchedules);
+    
+    // Định dạng lịch học
+    const dayNames = ["Chủ nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
+    const formattedSchedule = updatedSchedules.length > 0 
+      ? Array.from(new Set(updatedSchedules.map(s => dayNames[s.dayOfWeek]))).join(', ')
+      : '';
+    
+    const formattedTime = updatedSchedules.length > 0 
+      ? Array.from(new Set(updatedSchedules.map(s => 
+          `${s.startTime.substring(0, 5)}-${s.endTime.substring(0, 5)}`
+        ))).join(', ')
+      : '';
+    
+    // Tính thời gian buổi học tiếp theo dựa trên lịch học
+    let nextClassDate = new Date(); // Mặc định là ngày hiện tại
+    
+    if (updatedSchedules.length > 0) {
+      const now = new Date();
+      const currentDay = now.getDay(); // 0 = Chủ nhật, 1 = Thứ 2, ...
+      const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
+      
+      // Sắp xếp lịch học theo thứ tự ngày trong tuần
+      const sortedSchedules = [...updatedSchedules].sort((a, b) => {
+        if (a.dayOfWeek !== b.dayOfWeek) {
+          return a.dayOfWeek - b.dayOfWeek;
+        }
+        return a.startTime.localeCompare(b.startTime);
+      });
+      
+      // Tìm buổi học tiếp theo
+      let foundNextClass = false;
+      
+      // Đầu tiên tìm trong tuần hiện tại
+      for (const schedule of sortedSchedules) {
+        const [scheduleHour, scheduleMinute] = schedule.startTime.split(':').map(Number);
+        
+        if (
+          // Nếu là ngày trong tương lai trong tuần này
+          (schedule.dayOfWeek > currentDay) ||
+          // Hoặc là ngày hiện tại nhưng thời gian trong tương lai
+          (schedule.dayOfWeek === currentDay && 
+            (scheduleHour > currentHour || 
+              (scheduleHour === currentHour && scheduleMinute > currentMinute)))
+        ) {
+          // Tìm thấy buổi học tiếp theo trong tuần này
+          const daysToAdd = (schedule.dayOfWeek - currentDay + 7) % 7;
+          nextClassDate = new Date(now);
+          nextClassDate.setDate(now.getDate() + daysToAdd);
+          nextClassDate.setHours(scheduleHour, scheduleMinute, 0, 0);
+          foundNextClass = true;
+          break;
+        }
+      }
+      
+      // Nếu không tìm thấy trong tuần này, lấy buổi học đầu tiên của tuần sau
+      if (!foundNextClass && sortedSchedules.length > 0) {
+        const firstSchedule = sortedSchedules[0];
+        const [scheduleHour, scheduleMinute] = firstSchedule.startTime.split(':').map(Number);
+        
+        // Tính số ngày cần thêm để đến ngày tương ứng trong tuần tới
+        const daysToAdd = (firstSchedule.dayOfWeek - currentDay + 7) % 7;
+        
+        // Nếu là cùng ngày trong tuần, cộng thêm 7 ngày để lấy tuần sau
+        const actualDaysToAdd = (daysToAdd === 0) ? 7 : daysToAdd;
+        
+        nextClassDate = new Date(now);
+        nextClassDate.setDate(now.getDate() + actualDaysToAdd);
+        nextClassDate.setHours(scheduleHour, scheduleMinute, 0, 0);
+      }
+    }
+    
+    // Cập nhật state với thông tin mới
+    setClassDetail({
+      ...classDetail,
+      schedule: formattedSchedule,
+      time: formattedTime,
+      nextClass: nextClassDate.toISOString()
+    });
+  };
+
+  return (
+    <AuthGuard>
+      <AnimatedPageWrapper>
+        <div className="container mx-auto py-6 space-y-6">
+          <ClassDetailHeader classDetail={classDetail} />
+          
+          <ClassInfoCards 
+            classDetail={classDetail} 
+            formatDate={formatDate} 
+            getNextClassStatus={getNextClassStatus} 
+          />
+          
+          <div className="flex flex-col space-y-4">
+            <Tabs value={activeTab} onValueChange={handleTabChange}>
+              <ClassTabNav 
+                activeTab={activeTab} 
+                handleTabChange={handleTabChange} 
+                role={role} 
+                isMeetingActive={isMeetingActive} 
+              />
+              
+              <CustomTabsContent value="announcements" className="pt-6" transitionType="fade">
+                <AnnouncementsTab 
+                  classDetail={classDetail}
+                  role={role}
+                  userData={userData}
+                  formatDate={formatDate}
+                />
+              </CustomTabsContent>
+              
+              <CustomTabsContent value="assignments" className="pt-6 space-y-4" transitionType="slide">
+                <AssignmentsTab 
+                  classDetail={classDetail}
+                  role={role}
+                  formatDate={formatDate}
+                  classId={params.id as string}
+                />
+              </CustomTabsContent>
+              
+              <CustomTabsContent value="meeting" className="pt-6" transitionType="scale">
+                <OnlineMeetingTab 
+                  classDetail={classDetail}
+                  role={role}
+                  isMeetingActive={isMeetingActive}
+                  isLoadingMeeting={isLoadingMeeting}
+                  startMeeting={startMeeting}
+                  endMeeting={endMeeting}
+                />
+              </CustomTabsContent>
+              
+              <CustomTabsContent value="schedule" className="pt-6" transitionType="slide">
+                <ScheduleTab 
+                  classSchedules={classSchedules}
+                  isLoading={isLoadingSchedules}
+                  classId={classId}
+                  role={role}
+                  onAddSchedule={() => setShowScheduleModal(true)}
+                />
+              </CustomTabsContent>
+              
+              <CustomTabsContent value="materials" className="pt-6" transitionType="slide">
+                <MaterialsTab 
+                  classDetail={classDetail}
+                  role={role}
+                  formatDate={formatDate}
+                />
+              </CustomTabsContent>
+              
+              <CustomTabsContent value="students" className="pt-6" transitionType="fade">
+                <StudentsTab 
+                  classDetail={classDetail}
+                  role={role}
+                  setShowAddStudentModal={setShowAddStudentModal}
+                />
+              </CustomTabsContent>
+            
+              
+              <CustomTabsContent value="settings" className="pt-6" transitionType="slideUp">
+                <SettingsTab 
+                  classDetail={classDetail}
+                  openEditClassModal={openEditClassModal}
+                  role={role}
+                />
+              </CustomTabsContent>
+            </Tabs>
+          </div>
+          
+          {/* Modals */}
+          <AddStudentModal 
+            isOpen={showAddStudentModal}
+            setIsOpen={setShowAddStudentModal}
+            newStudentEmail={newStudentEmail}
+            setNewStudentEmail={setNewStudentEmail}
+            studentsToAdd={studentsToAdd}
+            setStudentsToAdd={setStudentsToAdd}
+            addStudentEmail={addStudentEmail}
+            removeStudentEmail={removeStudentEmail}
+            handleInviteStudents={handleInviteStudents}
+            classroomId={classDetail.classroomId || classId} 
+          />
+          
+          <ClassFormModal 
+            isOpen={showEditClassModal}
+            onOpenChange={setShowEditClassModal}
+            onSubmitClass={handleUpdateClass}
+            classDetail={classDetail}
+            mode="edit"
+          />
+          
+          <ScheduleModal 
+            isOpen={showScheduleModal}
+            setIsOpen={setShowScheduleModal}
+            classId={classId}
+            classSchedules={classSchedules}
+            onSchedulesUpdated={handleSchedulesUpdated}
+          />
+        </div>
+      </AnimatedPageWrapper>
+    </AuthGuard>
+  );
+}
+
+// Component mới hiển thị lịch học
+function ScheduleTab({ 
+  classSchedules, 
+  isLoading, 
+  classId, 
+  role, 
+  onAddSchedule 
+}: { 
+  classSchedules: ClassSchedule[],
+  isLoading: boolean,
+  classId: string,
+  role: string | null | undefined,
+  onAddSchedule: () => void
+}) {
+  // Map số ngày trong tuần sang tên ngày
+  const dayNames = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+  
+  // Sắp xếp lịch học theo thứ tự ngày trong tuần
+  const sortedSchedules = [...classSchedules].sort((a, b) => {
+    // Sắp xếp theo ngày trong tuần trước
+    if (a.dayOfWeek !== b.dayOfWeek) {
+      return a.dayOfWeek - b.dayOfWeek;
+    }
+    // Nếu cùng ngày, sắp xếp theo giờ bắt đầu
+    return a.startTime.localeCompare(b.startTime);
+  });
+  
+  // Tạo toast để hiển thị thông báo
+  const { toast } = useToast();
+  
+  // Xử lý xóa lịch học
+  const handleDeleteSchedule = async (scheduleId: string) => {
+    try {
+      await ClassroomService.deleteClassSchedule(scheduleId);
+      // Cập nhật UI sau khi xóa
+      toast({
+        title: 'Thành công',
+        description: 'Đã xóa lịch học',
+      });
+      // Gọi hàm để refresh lịch học từ component cha
+      onAddSchedule();
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Lỗi',
+        description: error.message || 'Không thể xóa lịch học',
+      });
+    }
+  };
+  
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Lịch học</CardTitle>
+          <CardDescription>Đang tải lịch học...</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="flex justify-between items-center p-4 border rounded-lg">
+              <Skeleton className="h-6 w-24" />
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-4 w-16" />
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <div>
+          <CardTitle>Lịch học</CardTitle>
+          <CardDescription>Quản lý lịch học của lớp</CardDescription>
+        </div>
+        {role === 'Teacher' && (
+          <Button onClick={onAddSchedule} className="ml-auto">
+            <Plus className="mr-2 h-4 w-4" />
+            Thêm lịch học
+          </Button>
+        )}
+      </CardHeader>
+      <CardContent className="grid gap-4">
+        {sortedSchedules.length > 0 ? (
+          sortedSchedules.map((schedule) => (
+            <div key={schedule.classScheduleId} className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 border rounded-lg hover:bg-accent/50 transition-all duration-200">
+              <div className="flex items-center mb-2 md:mb-0">
+                <Badge variant="outline" className="mr-2">
+                  {dayNames[schedule.dayOfWeek]}
+                </Badge>
+                <span className="text-sm font-medium">
+                  {schedule.startTime.substring(0, 5)} - {schedule.endTime.substring(0, 5)}
+                </span>
+              </div>
+              <div className="flex items-center">
+                <span className="text-xs text-muted-foreground mr-4">
+                  ID: {schedule.classScheduleId.substring(0, 8)}...
+                </span>
+                {role === 'Teacher' && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDeleteSchedule(schedule.classScheduleId)}
+                    className="text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="text-center py-8">
+            <div className="flex justify-center mb-4">
+              <Calendar className="h-12 w-12 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-medium mb-1">Chưa có lịch học</h3>
+            <p className="text-sm text-muted-foreground">
+              {role === 'Teacher' 
+                ? 'Hãy thiết lập lịch học cho lớp này bằng cách nhấn nút "Thêm lịch học"'
+                : 'Lớp học này chưa có lịch học được thiết lập'}
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// Components thêm
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Plus, Trash2, Calendar } from 'lucide-react';

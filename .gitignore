@@ -1,0 +1,57 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+/.cursor
+/.github
+.vscode
+.cursorignore
+
+# testing
+/coverage
+jest.config.local.js
+__mocks__/mock_data
+/.jest-cache
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+.hintrc
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files
+.env*
+!.env.example
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# memory bank và rules
+/memory_bank/
+*.mdc
+*rules*.md
+
+# Thêm các mục liên quan đến test nên bỏ qua
+.nyc_output
+/junit.xml
+
+# Lock files
+pnpm-lock.yaml

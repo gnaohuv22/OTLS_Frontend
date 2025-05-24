@@ -1,0 +1,9 @@
+{
+  "extends": "next/core-web-vitals",
+  "ignorePatterns": ["**/__tests__/**", "**/*.test.tsx", "**/*.test.ts", "jest.setup.js"],
+  "rules": {
+    "react/no-unescaped-entities": "off",
+    "@next/next/no-img-element": "off",
+    "react/jsx-no-comment-textnodes": "off"
+  }
+}
