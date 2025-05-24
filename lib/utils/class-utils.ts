@@ -29,18 +29,16 @@ export function filterClasses(classes: ClassItem[], filters: any): ClassItem[] {
 
   // Lọc theo trạng thái
   if (filters.status && filters.status !== "all") {
-    const now = new Date();
     result = result.filter((cls) => {
-      const nextClass = new Date(cls.nextClass);
-      const diffHours = (nextClass.getTime() - now.getTime()) / (1000 * 60 * 60);
-
       switch (filters.status) {
-        case 'upcoming':
-          return diffHours > 0 && diffHours <= 24;
-        case 'ongoing':
-          return diffHours > -1.5 && diffHours <= 0; // Giả sử mỗi lớp kéo dài 1.5 giờ
-        case 'completed':
-          return diffHours < -1.5;
+        case 'active':
+          return cls.status === 'active';
+        case 'inactive':
+          return cls.status === 'inactive';
+        case 'scheduled':
+          return cls.status === 'scheduled';
+        case 'pending':
+          return cls.status === 'pending';
         default:
           return true;
       }
@@ -60,14 +58,18 @@ export function sortClasses(classes: ClassItem[], sortConfig: string): ClassItem
         return a.name.localeCompare(b.name);
       case 'name-desc':
         return b.name.localeCompare(a.name);
-      case 'date-asc':
-        return new Date(a.nextClass).getTime() - new Date(b.nextClass).getTime();
-      case 'date-desc':
-        return new Date(b.nextClass).getTime() - new Date(a.nextClass).getTime();
+      case 'subject-asc':
+        return a.subject.localeCompare(b.subject);
+      case 'subject-desc':
+        return b.subject.localeCompare(a.subject);
       case 'students-asc':
         return a.totalStudents - b.totalStudents;
       case 'students-desc':
         return b.totalStudents - a.totalStudents;
+      case 'schedule-asc':
+        return a.schedule.localeCompare(b.schedule);
+      case 'schedule-desc':
+        return b.schedule.localeCompare(a.schedule);
       default:
         return 0;
     }

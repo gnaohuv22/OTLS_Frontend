@@ -79,6 +79,11 @@ const isJwtTokenExpired = (token: string): boolean => {
 
 // Tạo ID thiết bị duy nhất
 const generateDeviceId = (): string => {
+  // Kiểm tra nếu chạy trên client-side
+  if (typeof window === 'undefined') {
+    return 'ssr-device-id';
+  }
+  
   // Kiểm tra nếu đã có device ID
   const existingDeviceId = localStorage.getItem('device_id');
   if (existingDeviceId) {
@@ -213,6 +218,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const initializeAuth = async () => {
       try {
+        // Kiểm tra nếu đang chạy trên server-side
+        if (typeof window === 'undefined') {
+          setIsAuthenticated(false);
+          setIsLoading(false);
+          return;
+        }
+        
         // Kiểm tra các dữ liệu phiên từ localStorage và cookie
         const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
         const storedRole = localStorage.getItem('roleName') as UserRole;
@@ -322,6 +334,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (newUserData: UserDTO, token: string, newRole: UserRole) => {
     if (newRole && token && newUserData) {
       try {
+        // Kiểm tra nếu đang chạy trên server-side
+        if (typeof window === 'undefined') {
+          return false;
+        }
+        
         // Đảm bảo trường avatar không bị trống
         if (!newUserData.avatar) {
           newUserData.avatar = '/avatars/default.png';
@@ -403,6 +420,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Thêm phương thức làm mới token
   const refreshAccessToken = useCallback(async (): Promise<boolean> => {
     try {
+      // Kiểm tra nếu đang chạy trên server-side
+      if (typeof window === 'undefined') {
+        return false;
+      }
+      
       // Lấy thông tin cần thiết cho refresh token
       const storedUserId = localStorage.getItem('userId');
       const currentToken = Cookies.get('token');

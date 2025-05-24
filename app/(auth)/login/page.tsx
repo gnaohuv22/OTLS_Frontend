@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast";
@@ -13,18 +13,29 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const { isAuthenticated } = useAuth();
-  const returnUrl = searchParams.get('returnUrl') || '/dashboard';
+  const [mounted, setMounted] = useState(false);
+  
+  const returnUrl = searchParams?.get('returnUrl') || '/dashboard';
+  
+  // Wait for component to mount before checking authentication
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   
   // Kiểm tra xem người dùng đã đăng nhập chưa
   useEffect(() => {
+    if (!mounted) return;
+    
     if (isAuthenticated) {
       // Nếu đã đăng nhập, chuyển hướng về trang được yêu cầu hoặc dashboard
       router.push(returnUrl);
     }
-  }, [isAuthenticated, router, returnUrl]);
+  }, [isAuthenticated, router, returnUrl, mounted]);
 
   // Kiểm tra xem có tham số chuyển hướng từ middleware không
   useEffect(() => {
+    if (!mounted || !searchParams) return;
+    
     const authRequired = searchParams.get('authRequired');
     if (authRequired === 'true') {
       toast({
@@ -34,10 +45,12 @@ export default function LoginPage() {
         duration: 3000,
       });
     }
-  }, [searchParams, toast]);
+  }, [searchParams, toast, mounted]);
 
   // Thêm mới: Kiểm tra nếu người dùng vừa bị đăng xuất do token hết hạn
   useEffect(() => {
+    if (!mounted || !searchParams) return;
+    
     const tokenExpired = searchParams.get('tokenExpired');
     if (tokenExpired === 'true') {
       toast({
@@ -47,10 +60,10 @@ export default function LoginPage() {
         duration: 3000,
       });
     }
-  }, [searchParams, toast]);
+  }, [searchParams, toast, mounted]);
 
-  // Nếu đang kiểm tra trạng thái xác thực, hiển thị trạng thái loading
-  if (isAuthenticated === null) {
+  // Nếu component chưa mount hoặc đang kiểm tra trạng thái xác thực, hiển thị trạng thái loading
+  if (!mounted || isAuthenticated === null) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
