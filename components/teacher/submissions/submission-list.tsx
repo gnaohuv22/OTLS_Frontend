@@ -297,16 +297,16 @@ export function SubmissionList({
       <CardHeader>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <CardTitle>Danh sách bài nộp</CardTitle>
+            <div className="flex items-center gap-2 flex-wrap">
+              <CardTitle>Danh sách bài nộp</CardTitle>
+              {isExam && (
+                <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                  <Clock className="mr-1 h-3 w-3" /> Bài kiểm tra
+                </Badge>
+              )}
+            </div>
             <CardDescription>
               {assignmentTitle} - {submissions.length} bài nộp
-              {isExam && (
-                <span className="ml-2 inline-flex items-center">
-                  <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                    <Clock className="mr-1 h-3 w-3" /> Bài kiểm tra
-                  </Badge>
-                </span>
-              )}
             </CardDescription>
           </div>
           

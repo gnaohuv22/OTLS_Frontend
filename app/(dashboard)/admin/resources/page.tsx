@@ -124,12 +124,10 @@ export default function AdminResourcesPage() {
       }
 
       setFilteredResources(result);
-      // Reset to first page when filters change
-      pagination.goToPage(1);
     };
 
     filterResources();
-  }, [searchTerm, subjectFilter, typeFilter, statusFilter, resources, pagination]);
+  }, [searchTerm, subjectFilter, typeFilter, statusFilter, resources]);
 
   // Xử lý xóa tài nguyên
   const handleDeleteResource = async () => {

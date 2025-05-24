@@ -174,18 +174,24 @@ export function AdminClassList({
                 
                 <CardContent className="space-y-2 text-sm">
                   <div className="grid grid-cols-3 gap-1">
+                    <span className="text-muted-foreground col-span-1">Giáo viên:</span>
+                    <span className="col-span-2">
+                      {classroom.users?.fullName}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1">
+                    <span className="text-muted-foreground col-span-1">Mô tả:</span>
+                    <span className="col-span-2">
+                      {classroom.description}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1">
                     <span className="text-muted-foreground col-span-1">Ngày tạo:</span>
                     <span className="col-span-2">{formatDate(classroom.createdAt)}</span>
                   </div>
                   <div className="grid grid-cols-3 gap-1">
                     <span className="text-muted-foreground col-span-1">Cập nhật:</span>
                     <span className="col-span-2">{formatDate(classroom.updatedAt)}</span>
-                  </div>
-                  <div className="grid grid-cols-3 gap-1">
-                    <span className="text-muted-foreground col-span-1">Mã lớp:</span>
-                    <span className="col-span-2">
-                      {classroom.classroomId.substring(0, 8).toUpperCase()}
-                    </span>
                   </div>
                 </CardContent>
                 

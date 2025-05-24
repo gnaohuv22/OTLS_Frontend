@@ -36,6 +36,7 @@ import { X } from 'lucide-react';
 import { format, parse } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { Holiday } from '@/lib/api/holidays';
+import { toast } from '@/components/ui/use-toast';
 
 // Schema validation with zod
 const holidaySchema = z.object({
@@ -88,6 +89,15 @@ export function HolidayForm({ holiday, onSubmit, onCancel, isOpen }: HolidayForm
     // Convert string dates to ISO format for API
     const startDate = values.startDate ? new Date(values.startDate) : new Date();
     const endDate = values.endDate ? new Date(values.endDate) : undefined;
+
+    // Check validate startDate and endDate
+    if (endDate && startDate > endDate) {
+      toast({
+        title: 'Ngày bắt đầu không thể lớn hơn ngày kết thúc',
+        variant: 'destructive',
+      });
+      return;
+    } 
     
     const formattedData: Holiday = {
       ...holiday, // Preserve ID if editing

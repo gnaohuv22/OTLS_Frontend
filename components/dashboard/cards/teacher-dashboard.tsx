@@ -516,28 +516,6 @@ export function TeacherDashboard() {
         );
     }
 
-    // Empty state (no classrooms)
-    if (classrooms.length === 0) {
-        return (
-            <div className="space-y-6">
-                <div className="flex justify-between items-center">
-                    <h1 className="text-2xl font-semibold">Bảng điều khiển Giáo viên</h1>
-                    <Link href="/assignments/create">
-                        <Button className="gap-2">
-                            <Plus className="h-4 w-4" />
-                            Tạo bài tập mới
-                        </Button>
-                    </Link>
-                </div>
-                
-                <EmptyState 
-                    message="Bạn chưa được phân công lớp học nào. Vui lòng liên hệ quản trị viên." 
-                    icon={GraduationCap} 
-                />
-            </div>
-        );
-    }
-
     // Calculate overview stats
     const todayClassesCount = upcomingClasses.filter(c => c.date === 'Hôm nay').length;
     const weekClassesCount = classrooms.length; // Assuming each classroom has at least one session per week

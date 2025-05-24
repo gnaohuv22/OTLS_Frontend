@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { AuthGuard } from '@/components/auth/auth-guard';
 import { useAuth } from '@/lib/auth-context';
@@ -54,6 +54,10 @@ export default function AdminAssignmentsPage() {
     data: filteredAssignments,
     itemsPerPage: 10,
   });
+
+  // Use ref to store pagination goToPage function to avoid dependency cycle
+  const goToPageRef = useRef(pagination.goToPage);
+  goToPageRef.current = pagination.goToPage;
   
   // Kiểm tra quyền truy cập
   useEffect(() => {
@@ -96,7 +100,7 @@ export default function AdminAssignmentsPage() {
     fetchAssignments();
   }, [toast]);
   
-  // Lọc bài tập dựa trên từ khóa tìm kiếm và bộ lọc - Sử dụng useCallback để tránh ESLint warning
+  // Lọc bài tập dựa trên từ khóa tìm kiếm và bộ lọc - Remove pagination from dependencies
   const filterAssignments = useCallback(() => {
     let result = [...assignments];
     
@@ -131,9 +135,9 @@ export default function AdminAssignmentsPage() {
     }
     
     setFilteredAssignments(result);
-    // Reset to first page when filters change
-    pagination.goToPage(1);
-  }, [searchTerm, subjectFilter, statusFilter, assignments, pagination]);
+    // Reset to first page when filters change - use ref to avoid infinite loop
+    goToPageRef.current(1);
+  }, [searchTerm, subjectFilter, statusFilter, assignments]);
 
   useEffect(() => {
     filterAssignments();
@@ -208,7 +212,12 @@ export default function AdminAssignmentsPage() {
               Quản lý và theo dõi tất cả bài tập trên nền tảng
             </p>
           </div>
-          <Button onClick={() => router.push('/assignments/create')}>
+          <Button onClick={() => {
+            toast({
+              title: 'Tính năng này chưa khả dụng với quản trị viên',
+              variant: 'destructive',
+            });
+          }}> 
             <Plus className="h-4 w-4 mr-2" />
             Tạo bài tập mới
           </Button>

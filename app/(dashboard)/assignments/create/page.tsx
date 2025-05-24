@@ -186,8 +186,7 @@ function CreateAssignmentForm() {
         console.error('Error fetching subjects:', error);
         toast({
           variant: 'destructive',
-          title: 'Lỗi',
-          description: 'Không thể tải danh sách môn học. Vui lòng thử lại sau.',
+          title: 'Không thể tải danh sách môn học. Vui lòng thử lại sau.',
         });
       }
     };

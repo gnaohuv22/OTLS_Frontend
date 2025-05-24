@@ -31,6 +31,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { SubjectService, SubjectDTO } from '@/lib/api/resource';
 
 export default function AdminClassDetailPage() {
   const { toast } = useToast();
@@ -38,21 +39,23 @@ export default function AdminClassDetailPage() {
   const router = useRouter();
   const params = useParams();
   const classId = params.id as string;
-  
+
   const [classroom, setClassroom] = useState<Classroom | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  
+
   // State cho form chỉnh sửa
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [subject, setSubject] = useState('');
   const [status, setStatus] = useState<'Active' | 'Inactive'>('Inactive');
-  
+
   // State cho dialog xóa
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  
+
+  const [subjects, setSubjects] = useState<SubjectDTO[]>([]);
+
   // Kiểm tra quyền truy cập
   useEffect(() => {
     if (role !== 'Admin') {
@@ -64,7 +67,7 @@ export default function AdminClassDetailPage() {
       router.push('/dashboard');
     }
   }, [role, router, toast]);
-  
+
   // Lấy thông tin lớp học
   useEffect(() => {
     const fetchClassroom = async () => {
@@ -72,17 +75,17 @@ export default function AdminClassDetailPage() {
         setIsLoading(true);
         const data = await ClassroomService.getClassroomById(classId);
         setClassroom(data);
-        
+
         // Trích xuất thông tin từ mô tả
         let extractedSubject = 'Chưa xác định';
         let remainingDescription = data.description;
-        
+
         const subjectMatch = data.description.match(/Môn học: (.*?)(\n|$)/);
         if (subjectMatch) {
           extractedSubject = subjectMatch[1];
           remainingDescription = data.description.replace(subjectMatch[0], '').trim();
         }
-        
+
         // Cập nhật state form
         setName(data.name);
         setSubject(extractedSubject);
@@ -94,43 +97,66 @@ export default function AdminClassDetailPage() {
         } else {
           toast({
             title: 'Không thể tải thông tin lớp học',
-          description: error.message || 'Đã xảy ra lỗi khi tải thông tin lớp học.',
-          variant: 'destructive',
+            description: error.message || 'Đã xảy ra lỗi khi tải thông tin lớp học.',
+            variant: 'destructive',
           });
         }
       } finally {
         setIsLoading(false);
       }
     };
-    
+
     if (classId) {
       fetchClassroom();
     }
   }, [classId, router, toast]);
-  
+
+  // Load subjects from API
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      try {
+        const data = await SubjectService.getAllSubjects();
+        setSubjects(data);
+      } catch (error: any) {
+        if (error.status === 404) {
+          setSubjects([]);
+        } else {
+          toast({
+            title: 'Không thể tải danh sách môn học',
+            description: error.message || 'Đã xảy ra lỗi khi tải danh sách môn học.',
+            variant: 'destructive',
+          });
+        }
+      }
+    };
+    fetchSubjects();
+  }, [toast]);
+
   // Xử lý lưu thông tin
   const handleSave = async () => {
     try {
       if (!classroom) return;
-      
+
       setIsSaving(true);
-      
+
       // Tạo mô tả mới
       const newDescription = `Môn học: ${subject}\n\n${description}`;
-      
-      // Tạo dữ liệu cập nhật
+
+      // Tạo dữ liệu cập nhật - Remove isOnlineMeeting from general updates
       const updateData: UpdateClassroomRequest = {
         classroomId: classroom.classroomId,
         name: name,
-        description: newDescription
+        description: newDescription,
+        userId: classroom.users?.userID,
+        isOnlineMeeting: classroom.isOnlineMeeting
       };
-      
+
       // Gọi API cập nhật
       const updatedClassroom = await ClassroomService.updateClassroom(updateData);
-      
+
       // Cập nhật state
       setClassroom(updatedClassroom);
-      
+
       toast({
         title: 'Cập nhật thành công',
         description: 'Thông tin lớp học đã được cập nhật thành công.',
@@ -145,22 +171,22 @@ export default function AdminClassDetailPage() {
       setIsSaving(false);
     }
   };
-  
+
   // Xử lý xóa lớp học
   const handleDelete = async () => {
     try {
       if (!classroom) return;
-      
+
       setIsDeleting(true);
-      
+
       // Gọi API xóa lớp học
       await ClassroomService.deleteClassroom(classroom.classroomId);
-      
+
       toast({
         title: 'Xóa lớp học thành công',
         description: 'Lớp học đã được xóa thành công.',
       });
-      
+
       // Chuyển về trang danh sách lớp học
       router.push('/admin/classes');
     } catch (error: any) {
@@ -174,22 +200,22 @@ export default function AdminClassDetailPage() {
       setDeleteDialogOpen(false);
     }
   };
-  
+
   // Xử lý bắt đầu/kết thúc buổi học trực tuyến
   const handleToggleMeeting = async () => {
     try {
       if (!classroom) return;
-      
+
       const newStatus = classroom.isOnlineMeeting === 'Active' ? 'Inactive' : 'Active';
       const actionText = newStatus === 'Active' ? 'bắt đầu' : 'kết thúc';
-      
+
       // Cập nhật trạng thái
       const updatedClassroom = await ClassroomService.updateClassroomStatus(classroom.classroomId, newStatus);
-      
+
       // Cập nhật state
       setClassroom(updatedClassroom);
       setStatus(updatedClassroom.isOnlineMeeting);
-      
+
       toast({
         title: `Đã ${actionText} buổi học trực tuyến`,
         description: `Buổi học trực tuyến đã được ${actionText} thành công.`,
@@ -202,7 +228,7 @@ export default function AdminClassDetailPage() {
       });
     }
   };
-  
+
   // Format ngày tháng
   const formatDate = (dateString: string) => {
     try {
@@ -218,20 +244,20 @@ export default function AdminClassDetailPage() {
       return 'Không xác định';
     }
   };
-  
+
   return (
     <AuthGuard>
       <div className="container mx-auto py-6 space-y-6">
         <div className="flex items-center justify-between">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={() => router.push('/admin/classes')}
             className="flex items-center"
           >
             <ChevronLeft className="mr-2 h-4 w-4" />
             Quay lại
           </Button>
-          
+
           <div className="flex items-center space-x-2">
             <Button
               variant="outline"
@@ -242,7 +268,7 @@ export default function AdminClassDetailPage() {
               <Trash2 className="mr-2 h-4 w-4" />
               Xóa lớp học
             </Button>
-            
+
             <Button
               onClick={handleSave}
               disabled={isLoading || isSaving}
@@ -261,7 +287,7 @@ export default function AdminClassDetailPage() {
             </Button>
           </div>
         </div>
-        
+
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
@@ -287,7 +313,7 @@ export default function AdminClassDetailPage() {
                       placeholder="Nhập tên lớp học..."
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="subject">Môn học</Label>
                     <Select value={subject} onValueChange={setSubject}>
@@ -295,17 +321,15 @@ export default function AdminClassDetailPage() {
                         <SelectValue placeholder="Chọn môn học" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Toán">Toán</SelectItem>
-                        <SelectItem value="Tiếng Việt">Tiếng Việt</SelectItem>
-                        <SelectItem value="Tiếng Anh">Tiếng Anh</SelectItem>
-                        <SelectItem value="Khoa học">Khoa học</SelectItem>
-                        <SelectItem value="Lịch sử">Lịch sử</SelectItem>
-                        <SelectItem value="Địa lý">Địa lý</SelectItem>
-                        <SelectItem value="Mỹ thuật">Mỹ thuật</SelectItem>
+                        {subjects.map((subj) => (
+                          <SelectItem key={subj.subjectId} value={subj.subjectName}>
+                            {subj.subjectName}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="description">Mô tả lớp học</Label>
                     <Textarea
@@ -318,7 +342,7 @@ export default function AdminClassDetailPage() {
                   </div>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                   <div>
@@ -343,7 +367,7 @@ export default function AdminClassDetailPage() {
                 </CardContent>
               </Card>
             </div>
-            
+
             <div className="space-y-6">
               <Card>
                 <CardHeader>
@@ -358,14 +382,14 @@ export default function AdminClassDetailPage() {
                       </Badge>
                     </div>
                   </div>
-                  
+
                   <div>
                     <p className="text-sm font-medium">Ngày tạo</p>
                     <p className="text-sm text-muted-foreground">
                       {formatDate(classroom.createdAt)}
                     </p>
                   </div>
-                  
+
                   <div>
                     <p className="text-sm font-medium">Lần cập nhật cuối</p>
                     <p className="text-sm text-muted-foreground">
@@ -379,9 +403,9 @@ export default function AdminClassDetailPage() {
                       <div className="flex items-start space-x-3 bg-muted/50 p-3 rounded-md">
                         <div className="w-10 h-10 flex items-center justify-center bg-primary/10 rounded-full overflow-hidden text-primary">
                           {classroom.users.avatar ? (
-                            <img 
-                              src={classroom.users.avatar} 
-                              alt={classroom.users.fullName} 
+                            <img
+                              src={classroom.users.avatar}
+                              alt={classroom.users.fullName}
                               className="w-full h-full object-cover"
                             />
                           ) : (
@@ -427,7 +451,7 @@ export default function AdminClassDetailPage() {
           </div>
         )}
       </div>
-      
+
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

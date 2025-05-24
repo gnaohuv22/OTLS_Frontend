@@ -123,6 +123,137 @@
     --accent-foreground: 240 70% 90%;
   }
 
+  /* ✨ STARRY NIGHT THEME - EASTER EGG ✨ */
+  .starry-night {
+    --background: 235 39% 10%;
+    --foreground: 60 30% 96%;
+    --card: 235 39% 12%;
+    --card-foreground: 60 30% 96%;
+    --popover: 235 39% 12%;
+    --popover-foreground: 60 30% 96%;
+    --primary: 47 100% 70%;
+    --primary-foreground: 235 39% 10%;
+    --secondary: 235 20% 20%;
+    --secondary-foreground: 60 30% 96%;
+    --muted: 235 20% 18%;
+    --muted-foreground: 60 5% 70%;
+    --accent: 235 20% 20%;
+    --accent-foreground: 60 30% 96%;
+    --destructive: 0 85% 60%;
+    --destructive-foreground: 60 30% 96%;
+    --border: 235 20% 25%;
+    --input: 235 20% 18%;
+    --ring: 47 100% 70%;
+    
+    position: relative;
+    overflow: auto;
+  }
+
+  .starry-night::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+      radial-gradient(2px 2px at 20px 30px, #ffd700, transparent),
+      radial-gradient(2px 2px at 40px 70px, #ffffff, transparent),
+      radial-gradient(1px 1px at 90px 40px, #ffd700, transparent),
+      radial-gradient(1px 1px at 130px 80px, #ffffff, transparent),
+      radial-gradient(2px 2px at 160px 30px, #ffd700, transparent),
+      radial-gradient(1px 1px at 200px 60px, #ffffff, transparent),
+      radial-gradient(2px 2px at 240px 90px, #ffd700, transparent),
+      radial-gradient(1px 1px at 280px 10px, #ffffff, transparent),
+      radial-gradient(1px 1px at 320px 50px, #ffd700, transparent),
+      radial-gradient(2px 2px at 360px 80px, #ffffff, transparent),
+      radial-gradient(1px 1px at 400px 20px, #ffd700, transparent),
+      radial-gradient(2px 2px at 440px 70px, #ffffff, transparent),
+      radial-gradient(1px 1px at 480px 40px, #ffd700, transparent),
+      radial-gradient(1px 1px at 520px 90px, #ffffff, transparent),
+      radial-gradient(2px 2px at 560px 15px, #ffd700, transparent);
+    background-repeat: repeat;
+    background-size: 600px 100px;
+    animation: twinkle 4s ease-in-out infinite alternate, drift 60s linear infinite;
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  .starry-night::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+      radial-gradient(1px 1px at 50px 100px, #87ceeb, transparent),
+      radial-gradient(2px 2px at 150px 50px, #87ceeb, transparent),
+      radial-gradient(1px 1px at 250px 120px, #87ceeb, transparent),
+      radial-gradient(2px 2px at 350px 20px, #87ceeb, transparent),
+      radial-gradient(1px 1px at 450px 80px, #87ceeb, transparent);
+    background-repeat: repeat;
+    background-size: 500px 150px;
+    animation: twinkle 3s ease-in-out infinite alternate-reverse, drift 80s linear infinite reverse;
+    pointer-events: none;
+    z-index: -1;
+    opacity: 0.6;
+  }
+
+  @keyframes twinkle {
+    0% { opacity: 0.3; }
+    100% { opacity: 1; }
+  }
+
+  @keyframes drift {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-100px); }
+  }
+
+  /* Moon for starry night */
+  .starry-night .moon {
+    position: fixed;
+    top: 5%;
+    right: 10%;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, #ffd700 0%, #ffed4e 50%, #f9f295 100%);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5), 0 0 40px rgba(255, 215, 0, 0.3);
+    pointer-events: none;
+    z-index: 0;
+    animation: moonGlow 6s ease-in-out infinite alternate;
+  }
+
+  @keyframes moonGlow {
+    0% { 
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.5), 0 0 40px rgba(255, 215, 0, 0.3);
+      transform: scale(1);
+    }
+    100% { 
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.7), 0 0 60px rgba(255, 215, 0, 0.5);
+      transform: scale(1.05);
+    }
+  }
+
+  @keyframes moonParallax {
+    0% { 
+      transform: translateX(0) translateY(0) scale(1);
+    }
+    25% { 
+      transform: translateX(-15vw) translateY(5vh) scale(1.02);
+    }
+    50% { 
+      transform: translateX(-25vw) translateY(15vh) scale(1.05);
+    }
+    75% { 
+      transform: translateX(-15vw) translateY(25vh) scale(1.02);
+    }
+    100% { 
+      transform: translateX(0) translateY(30vh) scale(1);
+    }
+  }
+
   * {
     @apply border-border;
   }
@@ -130,11 +261,58 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  /* Add smooth transitions for theme changes */
+  /* Enhanced smooth transitions for theme changes */
   * {
-    transition: background-color 0.5s ease, border-color 0.5s ease, text-color 0.5s ease;
+    transition: background-color 0.6s cubic-bezier(0.4, 0, 0.2, 1), 
+               border-color 0.6s cubic-bezier(0.4, 0, 0.2, 1), 
+               color 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+               box-shadow 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Enhanced button hover effects */
+  .theme-button {
+    position: relative;
+    overflow: hidden;
+    transform: translateZ(0);
+  }
+
+  .theme-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.5s ease;
+  }
+
+  .theme-button:hover::before {
+    left: 100%;
+  }
+
+  /* Easter egg activation animation */
+  .easter-egg-activated {
+    animation: easterEggPulse 1s ease-in-out;
+  }
+
+  @keyframes easterEggPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); box-shadow: 0 0 20px rgba(255, 215, 0, 0.6); }
+    100% { transform: scale(1); }
+  }
+
+  /* Settings card enhanced animations */
+  .settings-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .settings-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
   }
 }
 
