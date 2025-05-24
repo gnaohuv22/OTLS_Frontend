@@ -8,7 +8,7 @@ if (!apiKey) {
   console.error('GOOGLE_AI_API_KEY không được cung cấp trong biến môi trường');
 }
 
-export const maxDuration = 300; // 5 phút timeout
+export const maxDuration = 60; // Reduced to 60s for Hobby plan compatibility
 
 export async function POST(request: Request) {
   try {
