@@ -219,10 +219,10 @@ export default function SettingsPage() {
   };
   
   // Handle theme change
-  const handleThemeChange = (value: string) => {
+  const handleThemeChange = useCallback((value: string) => {
     setTheme(value);
     playSound('switch');
-  };
+  }, [playSound, setTheme]);
 
   // Theme preview handlers
   const handleThemePreview = (themeValue: string) => {
@@ -330,14 +330,14 @@ export default function SettingsPage() {
   };
   
   // Save all settings
-  const saveAllSettings = () => {
+  const saveAllSettings = useCallback(() => {
     // Settings are saved individually as they change
     playSound('success');
     toast({
       title: "Đã lưu tất cả cài đặt",
       description: "Các cài đặt của bạn đã được lưu thành công.",
     });
-  };
+  }, [playSound, toast]);
   
   // Reset individual section
   const resetSection = (section: 'appearance' | 'accessibility' | 'preferences') => {
@@ -381,7 +381,7 @@ export default function SettingsPage() {
   };
   
   // Reset all settings to default
-  const resetAllSettings = () => {
+  const resetAllSettings = useCallback(() => {
     // Reset theme
     setTheme("system");
     
@@ -434,7 +434,7 @@ export default function SettingsPage() {
       title: "Đã khôi phục cài đặt mặc định",
       description: "Tất cả cài đặt đã được đặt lại về giá trị mặc định.",
     });
-  };
+  }, [setTheme, setFontSize, setHighContrast, setAnimationsEnabled, setAutoSave, setNotificationsEnabled, setColorblindMode, setSoundEffects, setIsStarryNight, setSystemClickCount, playSound, toast]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -471,7 +471,7 @@ export default function SettingsPage() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showKeyboardShortcuts]);
+  }, [showKeyboardShortcuts, handleThemeChange, resetAllSettings, saveAllSettings]);
 
   return (
     <AuthGuard>
