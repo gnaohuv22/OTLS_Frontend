@@ -23,18 +23,42 @@ export interface ClassDetail {
   classroomId: string;
 }
 
-// Announcement related types
+// Announcement related types (Updated for API compatibility)
 export interface Announcement {
-  id: number;
+  id: string; // Changed from number to string for API compatibility
   title: string;
   content: string;
   date: string;
   isImportant: boolean;
   author: string;
   authorRole: string;
-  comments: Comment[];
+  authorId: string; // Added for API integration
+  classroomId: string; // Added for API integration
+  comments: AnnouncementComment[]; // Updated type name
+  isPinned: boolean; // Added for pinning feature
+  isEdited: boolean; // Added for edit tracking
+  editedAt?: string; // Added for edit timestamp
+  createdAt: string; // Added for API compatibility
+  updatedAt: string; // Added for API compatibility
 }
 
+export interface AnnouncementComment {
+  id: string; // Changed from number to string for API compatibility
+  content: string;
+  date: string;
+  author: string;
+  authorRole: string;
+  authorId: string; // Added for API integration
+  announcementId: string; // Added for API integration
+  parentCommentId?: string; // Added for nested comments/replies
+  mentions?: string[]; // Added for user tagging
+  isEdited: boolean; // Added for edit tracking
+  editedAt?: string; // Added for edit timestamp
+  createdAt: string; // Added for API compatibility
+  updatedAt: string; // Added for API compatibility
+}
+
+// Legacy interface for backward compatibility (can be removed later)
 export interface Comment {
   id: number;
   content: string;
@@ -83,6 +107,14 @@ export interface Student {
   status?: string;
 }
 
+// User data for API calls
+export interface UserData {
+  id: string;
+  name: string;
+  role: UserRole;
+  email?: string;
+}
+
 // Analytics related types
 export interface ClassStatistics {
   assignments: {
@@ -125,53 +157,81 @@ export interface ClassTabNavProps {
 export interface AnnouncementCardProps {
   announcement: Announcement;
   role: UserRole;
-  userData?: any;
+  userData: UserData;
   formatDate: (dateString: string) => string;
-  handleStartEditAnnouncement: (announcement: Announcement) => void;
-  handleDeleteAnnouncement: (id: number) => void;
-  onAddComment: (announcementId: number, comment: string) => void;
-  isEditing: boolean;
-  editingAnnouncement?: {
-    title: string;
-    content: string;
-    isImportant: boolean;
-  };
-  setEditingAnnouncement?: (value: {
-    title: string;
-    content: string;
-    isImportant: boolean;
-  }) => void;
-  handleCancelEditAnnouncement: () => void;
-  handleSaveEditAnnouncement: () => void;
+  onUpdate: (updatedAnnouncement: Announcement) => void;
+  onDelete: (announcementId: string) => void;
+  onAddComment: (announcementId: string, comment: string, mentions?: string[], parentCommentId?: string) => void;
+  onUpdateComment: (commentId: string, content: string, mentions?: string[]) => void;
+  onDeleteComment: (commentId: string) => void;
+  onTogglePin: (announcementId: string, isPinned: boolean) => void;
 }
 
 export interface NewAnnouncementFormProps {
-  newAnnouncement: {
-    title: string;
-    content: string;
-    isImportant: boolean;
-  };
-  setNewAnnouncement: (value: {
-    title: string;
-    content: string;
-    isImportant: boolean;
-  }) => void;
-  handleCreateAnnouncement: () => void;
-  resetNewAnnouncementForm: () => void;
+  classroomId: string;
+  userData: UserData;
+  onCreateSuccess: (announcement: Announcement) => void;
+  onCreateError: (error: string) => void;
 }
 
 export interface CommentSectionProps {
-  comments: Comment[];
+  announcementId: string;
+  comments: AnnouncementComment[];
+  userData: UserData;
   formatDate: (dateString: string) => string;
-  onAddComment: (comment: string) => void;
+  onAddComment: (announcementId: string, comment: string, mentions?: string[], parentCommentId?: string) => void;
+  onUpdateComment: (commentId: string, content: string, mentions?: string[]) => void;
+  onDeleteComment: (commentId: string) => void;
+  students: Student[]; // For user tagging suggestions
+  teacher?: {
+    id: string;
+    name: string;
+    avatar?: string | null;
+    email?: string;
+  }; // For teacher tagging
 }
 
-// Tab component props
+// Enhanced announcement management props
+export interface AnnouncementManagerProps {
+  classroomId: string;
+  userData: UserData;
+  role: UserRole;
+  formatDate: (dateString: string) => string;
+  students: Student[]; // For user tagging
+  teacher?: {
+    id: string;
+    name: string;
+    avatar?: string | null;
+    email?: string;
+  }; // For teacher tagging
+}
+
+// User mention component props
+export interface UserMentionProps {
+  students: Student[];
+  teacher?: {
+    id: string;
+    name: string;
+    avatar?: string | null;
+    email?: string;
+  };
+  currentUserId: string; // To exclude current user from mentions
+  onMention: (userId: string, userName: string) => void;
+  searchTerm: string;
+}
+
+// Tab component props (Updated)
 export interface AnnouncementsTabProps {
   classDetail: ClassDetail;
   role: UserRole;
-  userData?: any;
+  userData: UserData;
   formatDate: (dateString: string) => string;
+  teacher?: {
+    id: string;
+    name: string;
+    avatar?: string | null;
+    email?: string;
+  }; // For teacher tagging
 }
 
 export interface AssignmentsTabProps {
@@ -212,7 +272,6 @@ export interface SettingsTabProps {
   role?: UserRole;
 }
 
-// Modal component props
 export interface EditClassModalProps {
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;

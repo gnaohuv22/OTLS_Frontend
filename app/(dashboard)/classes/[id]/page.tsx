@@ -28,74 +28,6 @@ import {
 } from '@/components/classes';
 
 import { ClassFormModal } from '@/components/classes/modals/class-form-modal';
-// Chi giữ lại mock data cho announcements
-const mockAnnouncements = [
-  {
-    id: 1,
-    title: 'Thông báo kiểm tra giữa kỳ',
-    content: 'Kiểm tra giữa kỳ sẽ diễn ra vào ngày 25/03/2024. Nội dung từ chương 1 đến chương 3.',
-    date: '2024-03-15T08:00:00',
-    isImportant: true,
-    author: 'Nguyễn Văn A',
-    authorRole: 'Teacher',
-    comments: [
-      {
-        id: 101,
-        content: 'Thưa thầy, em có thể xin tài liệu ôn tập được không ạ?',
-        date: '2024-03-15T10:30:00',
-        author: 'Trần Thị B',
-        authorRole: 'student'
-      },
-      {
-        id: 102,
-        content: 'Được em, thầy sẽ đăng tài liệu ôn tập vào ngày mai.',
-        date: '2024-03-15T11:00:00',
-        author: 'Nguyễn Văn A',
-        authorRole: 'Teacher'
-      }
-    ]
-  },
-  {
-    id: 2,
-    title: 'Thay đổi lịch học',
-    content: 'Lớp học ngày 20/03 sẽ được dời sang 21/03 do trùng với hoạt động của trường.',
-    date: '2024-03-14T10:00:00',
-    isImportant: true,
-    author: 'Nguyễn Văn A',
-    authorRole: 'Teacher',
-    comments: []
-  },
-  {
-    id: 3,
-    title: 'Tài liệu ôn tập',
-    content: 'Đã cập nhật tài liệu ôn tập cho bài kiểm tra sắp tới.',
-    date: '2024-03-13T14:00:00',
-    isImportant: false,
-    author: 'Nguyễn Văn A',
-    authorRole: 'Teacher',
-    comments: []
-  },
-  {
-    id: 4,
-    title: 'Nhắc nhở về bài tập',
-    content: 'Các em nhớ hoàn thành bài tập về nhà trước buổi học tới.',
-    date: '2024-03-12T09:00:00',
-    isImportant: false,
-    author: 'Nguyễn Văn A',
-    authorRole: 'Teacher',
-    comments: []
-  },
-  {
-    id: 5,
-    title: 'Kết quả kiểm tra',
-    content: 'Đã cập nhật điểm kiểm tra của tuần trước.',
-    date: '2024-03-11T16:00:00',
-    isImportant: false,
-    author: 'Nguyễn Văn A',
-    authorRole: 'Teacher',
-    comments: []
-  }
-];
 
 // Cấu trúc cơ bản của class detail, sẽ được điền bởi API
 const emptyClassDetail: ClassDetail = {
@@ -110,7 +42,7 @@ const emptyClassDetail: ClassDetail = {
   nextClass: new Date().toISOString(),
   status: 'inactive',
   description: '',
-  announcements: mockAnnouncements,
+  announcements: [], // Thông báo sẽ được quản lý bởi AnnouncementManager
   assignments: [],
   materials: [],
   students: [],
@@ -123,11 +55,11 @@ export default function ClassDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
-  const { role } = useAuth();
+  const { role, userData: authUserData } = useAuth();
   const classId = params.id as string;
 
   // Các state quản lý dữ liệu và UI
-  const [classDetail, setClassDetail] = useState(emptyClassDetail);
+  const [classDetail, setClassDetail] = useState<ClassDetail>(emptyClassDetail);
   const [activeTab, setActiveTab] = useState('announcements');
   const [isMeetingActive, setIsMeetingActive] = useState(false);
   const [isLoadingMeeting, setIsLoadingMeeting] = useState(false);
@@ -160,26 +92,20 @@ export default function ClassDetailPage() {
     meetingLink: ''
   });
 
-  // State cho announcement
-  const [newAnnouncement, setNewAnnouncement] = useState({
-    title: '',
-    content: '',
-    isImportant: false
-  });
-  const [editingAnnouncementId, setEditingAnnouncementId] = useState<number | null>(null);
-  const [editingAnnouncement, setEditingAnnouncement] = useState({
-    title: '',
-    content: '',
-    isImportant: false
-  });
-  const [visibleAnnouncements, setVisibleAnnouncements] = useState(5);
+  // State cho thông tin lớp học
+  const [teacherInfo, setTeacherInfo] = useState<{
+    id: string;
+    name: string;
+    avatar?: string | null;
+    email?: string;
+  } | undefined>(undefined);
 
-  // State cho user data
-  const [userData, setUserData] = useState({
-    id: 1,
-    name: 'Nguyễn Văn A',
+  // User data for announcement system
+  const userData = {
+    id: authUserData?.userID || 'testify-resurrection',
+    name: authUserData?.fullName || 'Testify',
     role: role
-  });
+  };
 
   // Load dữ liệu từ API
   useEffect(() => {
@@ -189,6 +115,17 @@ export default function ClassDetailPage() {
         
         // Lấy thông tin lớp học từ API
         const classroomData = await ClassroomService.getClassroomById(classId);
+        
+        // Trích xuất thông tin giáo viên
+        const teacherInfo = classroomData.users ? {
+          id: classroomData.users.userID,
+          name: classroomData.users.fullName,
+          avatar: classroomData.users.avatar,
+          email: classroomData.users.email
+        } : undefined;
+        
+        // Lưu thông tin giáo viên vào state
+        setTeacherInfo(teacherInfo);
         
         // Kiểm tra trạng thái buổi học trực tuyến
         setIsMeetingActive(classroomData.isOnlineMeeting === 'Active');
@@ -416,138 +353,6 @@ export default function ClassDetailPage() {
       setActiveTab(tabParam);
     }
   }, []);
-
-  // Handler functions cho thông báo
-  const handleCreateAnnouncement = () => {
-    if (!newAnnouncement.title || !newAnnouncement.content) {
-      toast({
-        title: 'Không thể tạo thông báo',
-        description: 'Vui lòng nhập tiêu đề và nội dung',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    const now = new Date();
-    const newAnnouncementObj = {
-      id: Date.now(),
-      title: newAnnouncement.title,
-      content: newAnnouncement.content,
-      date: now.toISOString(),
-      isImportant: newAnnouncement.isImportant,
-      author: userData.name,
-      authorRole: userData.role || 'Unknown',
-      comments: []
-    };
-
-    setClassDetail({
-      ...classDetail,
-      announcements: [newAnnouncementObj, ...classDetail.announcements]
-    });
-
-    resetNewAnnouncementForm();
-
-    toast({
-      title: 'Đã tạo thông báo',
-      description: 'Thông báo đã được đăng thành công',
-    });
-  };
-
-  const resetNewAnnouncementForm = () => {
-    setNewAnnouncement({
-      title: '',
-      content: '',
-      isImportant: false
-    });
-  };
-
-  const handleStartEditAnnouncement = (announcement: Announcement) => {
-    setEditingAnnouncementId(announcement.id);
-    setEditingAnnouncement({
-      title: announcement.title,
-      content: announcement.content,
-      isImportant: announcement.isImportant
-    });
-  };
-
-  const handleCancelEditAnnouncement = () => {
-    setEditingAnnouncementId(null);
-    setEditingAnnouncement({
-      title: '',
-      content: '',
-      isImportant: false
-    });
-  };
-
-  const handleSaveEditAnnouncement = () => {
-    if (!editingAnnouncement.title || !editingAnnouncement.content) {
-      toast({
-        title: 'Không thể cập nhật thông báo',
-        description: 'Vui lòng nhập tiêu đề và nội dung',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    setClassDetail({
-      ...classDetail,
-      announcements: classDetail.announcements.map((announcement: Announcement) => 
-        announcement.id === editingAnnouncementId
-          ? { 
-              ...announcement, 
-              title: editingAnnouncement.title,
-              content: editingAnnouncement.content,
-              isImportant: editingAnnouncement.isImportant
-            }
-          : announcement
-      )
-    });
-
-    handleCancelEditAnnouncement();
-
-    toast({
-      title: 'Đã cập nhật thông báo',
-      description: 'Thông báo đã được cập nhật thành công',
-    });
-  };
-
-  const handleDeleteAnnouncement = (id: number) => {
-    setClassDetail({
-      ...classDetail,
-      announcements: classDetail.announcements.filter((announcement: Announcement) => announcement.id !== id)
-    });
-
-    toast({
-      title: 'Đã xóa thông báo',
-      description: 'Thông báo đã được xóa thành công',
-    });
-  };
-
-  const handleAddComment = (announcementId: number, comment: string) => {
-    if (!comment.trim()) return;
-
-    const now = new Date();
-    const newComment = {
-      id: Date.now(),
-      content: comment,
-      date: now.toISOString(),
-      author: userData.name,
-      authorRole: userData.role || 'Unknown'
-    };
-
-    setClassDetail({
-      ...classDetail,
-      announcements: classDetail.announcements.map((announcement: Announcement) => 
-        announcement.id === announcementId
-          ? { ...announcement, comments: [...announcement.comments, newComment] }
-          : announcement
-      )
-    });
-  };
-
-  const loadMoreAnnouncements = () => {
-    setVisibleAnnouncements(prev => prev + 5);
-  };
 
   // Handlers cho cuộc họp trực tuyến
   const startMeeting = async () => {
@@ -800,6 +605,7 @@ export default function ClassDetailPage() {
                   role={role}
                   userData={userData}
                   formatDate={formatDate}
+                  teacher={teacherInfo}
                 />
               </CustomTabsContent>
               

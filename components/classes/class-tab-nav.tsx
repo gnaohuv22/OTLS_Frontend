@@ -5,7 +5,7 @@ import { memo } from 'react';
 
 function ClassTabNavComponent({ activeTab, handleTabChange, role, isMeetingActive }: ClassTabNavProps) {
   // Tính toán số lượng tab để phân chia grid
-  const tabCount = role === 'Teacher' ? 6 : 5;
+  const tabCount = role === 'Teacher' ? 6 : 6;
   
   // Định nghĩa style chung cho tất cả các tab, loại bỏ min-width
   const commonTabClass = "text-xs sm:text-sm px-1 sm:px-3";
