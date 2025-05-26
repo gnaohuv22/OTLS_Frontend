@@ -111,9 +111,6 @@ export const ResourceCard = React.memo(
           // Không bao gồm thumbnailFile để tránh tải lên lại
         };
         
-        // Debug: Hiển thị payload gửi đến API
-        console.log('Tải xuống - Payload API:', payload);
-        
         // Bắt đầu tải xuống ngay lập tức - không chờ cập nhật API
         FileViewer.downloadFile(resource.url, resource.title);
         

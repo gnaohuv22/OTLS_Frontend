@@ -322,23 +322,6 @@ export function Resources() {
         subjectId: resourceData.subjectId || '' // Ensure subjectId is passed properly
       };
       
-      // Debug: Show the payload being sent to the API
-      console.log('Upload Resource - API Payload:', uploadRequest);
-      toast({
-        title: 'Debug: Dữ liệu tải lên',
-        description: (
-          <pre className="mt-2 w-full max-h-[300px] overflow-auto rounded-md bg-slate-950 p-4">
-            <code className="text-white text-xs">
-              {JSON.stringify({
-                ...uploadRequest,
-                resourceFile: uploadRequest.resourceFile ? 'File object (not shown)' : null,
-                thumbnailFile: uploadRequest.thumbnailFile ? 'File object (not shown)' : null
-              }, null, 2)}
-            </code>
-          </pre>
-        ),
-      });
-      
       // Send request to API
       const newResource = await ResourceService.addResource(uploadRequest);
       
@@ -414,22 +397,6 @@ export function Resources() {
         owner: resourceData.owner,
         metaData: JSON.stringify(currentMetadata) // Preserve the existing metadata
       };
-      
-      // Debug: Show the payload being sent to the API
-      console.log('Chỉnh sửa tài nguyên - Dữ liệu API:', updateRequest);
-      toast({
-        title: 'Debug: Dữ liệu chỉnh sửa',
-        description: (
-          <pre className="mt-2 w-full max-h-[300px] overflow-auto rounded-md bg-slate-950 p-4">
-            <code className="text-white text-xs">
-              {JSON.stringify({
-                ...updateRequest,
-                thumbnailFile: updateRequest.thumbnailFile ? 'File object (not shown)' : null
-              }, null, 2)}
-            </code>
-          </pre>
-        ),
-      });
       
       const updatedResource = await ResourceService.editResource(updateRequest);
       

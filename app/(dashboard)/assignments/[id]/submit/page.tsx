@@ -63,35 +63,20 @@ export default function AssignmentSubmitPage() {
         }
         
         // Check if student already has a submission for an EXAM assignment
-        // For non-exam assignments, allow retaking
+        // For non-exam assignments (timer === "0" or null), allow retaking
         const isExam = response.data.timer && response.data.timer !== "0";
         
-        if (isExam && user?.userID) {
-          try {
-            const submissionsResponse = await getSubmissionsByUserId(user.userID);
-            if (submissionsResponse.data && submissionsResponse.data.submissions) {
-              const hasExistingSubmission = submissionsResponse.data.submissions.some(
-                (sub: any) => sub.assignmentId === assignmentId
-              );
-              
-              if (hasExistingSubmission) {
-                setHasSubmission(true);
-                toast({
-                  title: 'Thông báo',
-                  description: 'Bạn đã nộp bài kiểm tra này rồi và không thể làm lại.',
-                });
-                // Redirect back to the assignment detail page
-                router.push(`/assignments/${assignmentId}`);
-              }
-            }
-          } catch (submissionError: any) {
-            // Handle 404 as normal case (no submissions yet)
-            if (submissionError?.response?.status === 404 || submissionError?.status === 404) {
-              console.log('No submissions found for user - this is normal for new attempts');
-              // Do nothing, allow student to proceed with submission
-            } else {
-              // For other errors, log but don't block submission
-              console.warn('Error checking existing submissions:', submissionError);
+        if (user?.userID && isExam) {
+          // Only check for existing submissions if it's an exam (has timer and timer !== "0")
+          const submissionResponse = await getSubmissionsByUserId(user.userID);
+          
+          if (submissionResponse.data && submissionResponse.data.submissions) {
+            const existingSubmission = submissionResponse.data.submissions.find(
+              (sub: any) => sub.assignmentId === assignmentId
+            );
+            
+            if (existingSubmission) {
+              setHasSubmission(true);
             }
           }
         }

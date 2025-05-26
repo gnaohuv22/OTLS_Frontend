@@ -129,7 +129,7 @@ export default function AssignmentDetail() {
     }
   }, [assignmentId]);
   
-  // Fetch submissions for students (just their own)
+  // Fetch submissions for students (just their own, show latest)
   const fetchStudentSubmission = useCallback(async () => {
     if (!user?.userID) return;
     
@@ -138,13 +138,18 @@ export default function AssignmentDetail() {
       const response = await getSubmissionsByUserId(user.userID);
       
       if (response.data && response.data.submissions) {
-        // Find submission for this assignment
-        const submission = response.data.submissions.find(
+        // Find all submissions for this assignment
+        const assignmentSubmissions = response.data.submissions.filter(
           (sub: any) => sub.assignmentId === assignmentId
         );
         
-        if (submission) {
-          setStudentSubmission(submission);
+        if (assignmentSubmissions.length > 0) {
+          // Sort by submission date (newest first) and take the latest one
+          const latestSubmission = assignmentSubmissions.sort(
+            (a: any, b: any) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
+          )[0];
+          
+          setStudentSubmission(latestSubmission);
         } else {
           setStudentSubmission(null);
         }
@@ -541,6 +546,30 @@ export default function AssignmentDetail() {
                     </Card>
                   ) : studentSubmission ? (
                     <div className="space-y-4">
+                      {/* Show latest submission info for non-exam assignments */}
+                      {(!assignment.timer || assignment.timer === "0") && (
+                        <Card className="w-full">
+                          <CardContent className="pt-6">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <h3 className="font-medium">Bài nộp gần nhất</h3>
+                                <p className="text-sm text-muted-foreground">
+                                  Nộp lúc: {new Date(studentSubmission.submittedAt).toLocaleString('vi-VN')}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  Điểm: {studentSubmission.grade || 'Chưa chấm'}/{assignment.maxPoints || 10}
+                                </p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-sm text-muted-foreground">
+                                  Bài tập này cho phép nộp nhiều lần
+                                </p>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+                      
                       <SubmissionDetail
                         submissionId={studentSubmission.submissionId}
                         assignmentId={assignmentId}
@@ -548,8 +577,8 @@ export default function AssignmentDetail() {
                         allowEdit={false}
                       />
                       
-                      {/* Add retake button for non-exam assignments */}
-                      {!assignment.isExam && !isExpired && (
+                      {/* Add retake button for non-exam assignments (timer === "0" or null) */}
+                      {(!assignment.timer || assignment.timer === "0") && !isExpired && (
                         <Card className="w-full p-4">
                           <CardContent className="flex justify-between items-center">
                             <div>

@@ -96,7 +96,6 @@ export function RegisterForm() {
       ...prev,
       avatar: avatarUrl
     }));
-    console.log(`[Debug] Avatar đã thay đổi thành: '${avatarUrl}'`);
   };
 
   // Validate từng trường riêng lẻ
@@ -109,7 +108,6 @@ export function RegisterForm() {
     }));
 
     if (errorMessage) {
-      console.log(`[Debug] Lỗi validation trường '${name}': ${errorMessage}`);
     }
 
     return !errorMessage; // Trả về true nếu không có lỗi
@@ -118,20 +116,12 @@ export function RegisterForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('================== BẮT ĐẦU QUÁ TRÌNH ĐĂNG KÝ ==================');
-    console.log('[Debug] Form đã được submit');
-    console.log('[Debug] Form data hiện tại:', JSON.stringify(formData, null, 2));
-    
     // Validate tất cả các trường
     const isValid = Object.keys(formData).every(field => 
       validateField(field, formData[field as keyof typeof formData])
     );
 
-    console.log(`[Debug] Kết quả validation toàn bộ form: ${isValid ? 'HỢP LỆ' : 'KHÔNG HỢP LỆ'}`);
-    console.log('[Debug] Danh sách lỗi:', JSON.stringify(errors, null, 2));
-
     if (!isValid) {
-      console.log('[Debug] Form không hợp lệ, hiển thị thông báo lỗi');
       toast({
         variant: "destructive",
         title: "Lỗi",
@@ -142,7 +132,6 @@ export function RegisterForm() {
 
     // Kiểm tra bổ sung cho số điện thoại
     if (!/^(0[3|5|7|8|9])+([0-9]{8})$/.test(formData.phoneNumber)) {
-      console.log('[Debug] Số điện thoại không đúng định dạng:', formData.phoneNumber);
       toast({
         variant: "destructive",
         title: "Lỗi",
@@ -160,11 +149,8 @@ export function RegisterForm() {
       if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
         age--;
       }
-      
-      console.log(`[Debug] Tuổi của học sinh: ${age} tuổi`);
-      
+
       if (age < 6 || age > 20) {
-        console.log('[Debug] Tuổi không hợp lệ, nằm ngoài khoảng 6-20 tuổi');
         toast({
           variant: "destructive",
           title: "Lỗi",
@@ -174,9 +160,7 @@ export function RegisterForm() {
       }
     }
 
-    console.log('[Debug] Tất cả validation đã pass, chuẩn bị gửi dữ liệu đến server');
     setIsLoading(true);
-    console.log('[Debug] Đã cập nhật trạng thái isLoading thành true');
     
     try {
       
@@ -192,20 +176,12 @@ export function RegisterForm() {
         ...(formData.avatar ? { avatar: formData.avatar } : {})
       };
       
-      console.log('[Debug] Dữ liệu gửi đến API:', JSON.stringify(registerData, null, 2));
-      console.log('[Debug] URL gọi API: /auth/register (POST)');
-      console.log('[Debug] Đang gửi yêu cầu đăng ký đến server...');
-      
       // Đo thời gian gọi API
       const startTime = performance.now();
       const response = await AuthService.register(registerData);
       const endTime = performance.now();
       
-      console.log(`[Debug] Đã nhận response sau ${(endTime - startTime).toFixed(2)}ms`);
-      console.log('[Debug] Response nhận được:', JSON.stringify(response, null, 2));
-      
       if (response.success) {
-        console.log('[Debug] Đăng ký thành công, chuẩn bị chuyển hướng đến trang xác thực số điện thoại');
         toast({
           title: "Đăng ký thành công",
           description: "Vui lòng xác thực số điện thoại để hoàn tất đăng ký",
@@ -214,16 +190,10 @@ export function RegisterForm() {
         // Lưu số điện thoại và username vào localStorage để sử dụng ở trang xác thực
         localStorage.setItem('registerPhoneNumber', formData.phoneNumber);
         localStorage.setItem('registerUsername', formData.username);
-        console.log('[Debug] Đã lưu thông tin vào localStorage:', {
-          phoneNumber: formData.phoneNumber,
-          username: formData.username
-        });
         
         // Chuyển hướng đến trang xác thực số điện thoại
-        console.log('[Debug] Chuyển hướng đến trang /verify-phone');
         router.push('/verify-phone');
       } else {
-        console.log('[Debug] Đăng ký thất bại:', response.message);
         toast({
           variant: "destructive",
           title: "Đăng ký thất bại",
@@ -231,39 +201,13 @@ export function RegisterForm() {
         });
       }
     } catch (error: any) {
-      console.error('[Debug] Exception khi gọi API đăng ký:', error);
-      console.log('[Debug] Chi tiết lỗi:', {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-        response: error.response ? {
-          status: error.response.status,
-          statusText: error.response.statusText,
-          data: error.response.data,
-          headers: error.response.headers
-        } : 'Không có response'
-      });
-      
-      // Kiểm tra xem có dữ liệu chi tiết nào từ BE không
-      if (error.response?.data) {
-        console.log('[Debug] Error response data chi tiết:', JSON.stringify(error.response.data, null, 2));
-        
-        // Hiển thị lỗi chi tiết từ BE nếu có
-        if (error.response.data.errors) {
-          console.log('[Debug] Validation errors từ BE:', JSON.stringify(error.response.data.errors, null, 2));
-        }
-      }
-      
       toast({
         variant: "destructive",
         title: "Đăng ký thất bại",
         description: error.message || "Có lỗi xảy ra, vui lòng thử lại sau.",
       });
     } finally {
-      console.log('[Debug] Kết thúc quá trình xử lý đăng ký');
       setIsLoading(false);
-      console.log('[Debug] Đã cập nhật trạng thái isLoading thành false');
-      console.log('================== KẾT THÚC QUÁ TRÌNH ĐĂNG KÝ ==================');
     }
   };
 

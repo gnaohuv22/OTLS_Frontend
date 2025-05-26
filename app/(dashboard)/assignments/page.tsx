@@ -126,15 +126,21 @@ export default function AssignmentsList() {
       const response = await getSubmissionsByUserId(userId);
       
       if (response.data && response.data.submissions) {
-        // Create a map of assignmentId -> submission data
+        // Create a map of assignmentId -> best submission data (highest grade)
         const submissionMap: Record<string, any> = {};
         
         response.data.submissions.forEach((submission: any) => {
-          submissionMap[submission.assignmentId] = {
-            status: submission.status,
-            grade: submission.grade,
-            submissionId: submission.submissionId
-          };
+          const assignmentId = submission.assignmentId;
+          
+          // If no existing submission for this assignment or current submission has higher grade
+          if (!submissionMap[assignmentId] || submission.grade > submissionMap[assignmentId].grade) {
+            submissionMap[assignmentId] = {
+              status: submission.status,
+              grade: submission.grade,
+              submissionId: submission.submissionId,
+              submittedAt: submission.submittedAt
+            };
+          }
         });
         
         setUserSubmissions(submissionMap);

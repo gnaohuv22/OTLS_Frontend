@@ -116,13 +116,13 @@ const UpcomingClassItem: React.FC<UpcomingClassItemProps> = React.memo(({ classI
         </div>
       </div>
       <div className="flex justify-between pt-2">
-        <Link href={`/classes/${classItem.id}/materials`}>
+        <Link href={`/classes/${classItem.id}?tab=materials`}>
           <Button variant="outline" size="sm" className="w-full gap-1 mr-1">
             <FileText className="h-3 w-3" />
             Tài liệu
           </Button>
         </Link>
-        <Link href={`/classes/${classItem.id}/meeting`}>
+        <Link href={`/classes/${classItem.id}?tab=meeting`}>
           <Button size="sm" className="w-full gap-1 ml-1">
             <Video className="h-3 w-3" />
             Tham gia

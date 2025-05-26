@@ -3,6 +3,8 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth-context';
+import { AuthGuard } from '@/components/auth/auth-guard';
+import { StudentAuthGuard } from '@/components/auth/student-auth-guard';
 import { MeetingController } from '@/components/meeting';
 import { ClassroomService, Classroom } from '@/lib/api/classes';
 import { Loader2 } from 'lucide-react';
@@ -59,20 +61,34 @@ export default function MeetingPage() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh]">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="mt-4 text-lg">Đang tải thông tin lớp học...</p>
-      </div>
+      <AuthGuard>
+        <StudentAuthGuard
+          resourceType="class"
+          resourceId={classId}
+        >
+          <div className="flex flex-col items-center justify-center min-h-[50vh]">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="mt-4 text-lg">Đang tải thông tin lớp học...</p>
+          </div>
+        </StudentAuthGuard>
+      </AuthGuard>
     );
   }
 
   if (error || !classDetail) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh]">
-        <p className="text-lg text-red-500">
-          {error || "Không thể tải thông tin lớp học"}
-        </p>
-      </div>
+      <AuthGuard>
+        <StudentAuthGuard
+          resourceType="class"
+          resourceId={classId}
+        >
+          <div className="flex flex-col items-center justify-center min-h-[50vh]">
+            <p className="text-lg text-red-500">
+              {error || "Không thể tải thông tin lớp học"}
+            </p>
+          </div>
+        </StudentAuthGuard>
+      </AuthGuard>
     );
   }
 
@@ -90,10 +106,17 @@ export default function MeetingPage() {
   };
 
   return (
-    <MeetingController
-      classId={classId}
-      classDetail={formattedClassDetail}
-      initialUserName={initialUserName}
-    />
+    <AuthGuard>
+      <StudentAuthGuard
+        resourceType="class"
+        resourceId={classId}
+      >
+        <MeetingController
+          classId={classId}
+          classDetail={formattedClassDetail}
+          initialUserName={initialUserName}
+        />
+      </StudentAuthGuard>
+    </AuthGuard>
   );
 } 

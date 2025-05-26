@@ -160,23 +160,26 @@ const AssignmentDetails = ({
             </div>
           )}
 
-          <div className="space-y-4">
-            <h3 className="text-md font-semibold">Thống kê bài nộp</h3>
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="p-4 border rounded-md flex flex-col items-center">
-                <p className="text-3xl font-bold text-green-500">{gradedCount}</p>
-                <p className="text-sm text-muted-foreground">Đã chấm điểm</p>
-              </div>
-              <div className="p-4 border rounded-md flex flex-col items-center">
-                <p className="text-3xl font-bold text-blue-500">{submittedCount}</p>
-                <p className="text-sm text-muted-foreground">Đã nộp, chưa chấm</p>
-              </div>
-              <div className="p-4 border rounded-md flex flex-col items-center">
-                <p className="text-3xl font-bold text-red-500">{lateCount}</p>
-                <p className="text-sm text-muted-foreground">Nộp muộn</p>
+          {/* Submission statistics - only show for teachers and admins */}
+          {(role === 'Teacher' || role === 'Admin') && (
+            <div className="space-y-4">
+              <h3 className="text-md font-semibold">Thống kê bài nộp</h3>
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="p-4 border rounded-md flex flex-col items-center">
+                  <p className="text-3xl font-bold text-green-500">{gradedCount}</p>
+                  <p className="text-sm text-muted-foreground">Đã chấm điểm</p>
+                </div>
+                <div className="p-4 border rounded-md flex flex-col items-center">
+                  <p className="text-3xl font-bold text-blue-500">{submittedCount}</p>
+                  <p className="text-sm text-muted-foreground">Đã nộp, chưa chấm</p>
+                </div>
+                <div className="p-4 border rounded-md flex flex-col items-center">
+                  <p className="text-3xl font-bold text-red-500">{lateCount}</p>
+                  <p className="text-sm text-muted-foreground">Nộp muộn</p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {role === 'Teacher' && (
             <div className="pt-4">
