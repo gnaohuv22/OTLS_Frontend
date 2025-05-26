@@ -17,6 +17,9 @@ const QUIZ_ANSWERS_KEY = 'otls_quiz_answers';
 const AUTO_SAVE_INTERVAL_MS = 10000; // Auto-save every 10 seconds
 const FONT_SIZE_KEY = 'otls_quiz_font_size'; // Add font size storage key
 
+// Generate timer storage key (same as TimerDisplay component)
+const getTimerStorageKey = (timer: string) => `exam_timer_${timer}_${window.location.pathname}`;
+
 interface QuizSubmissionProps {
   assignmentId: string;
   userId: string;
@@ -295,6 +298,17 @@ export function QuizSubmission({
           console.error("Error removing saved quiz answers:", error);
         }
         
+        // Clear timer from localStorage for exam mode
+        if (isExam && timer) {
+          try {
+            const timerKey = getTimerStorageKey(timer);
+            localStorage.removeItem(timerKey);
+            console.log("Timer cleared from localStorage after exam submission");
+          } catch (error) {
+            console.error("Error removing timer from localStorage:", error);
+          }
+        }
+        
         toast({
           title: "Nộp bài thành công",
           description: `Điểm của bạn: ${grade.toFixed(1)}`,
@@ -316,7 +330,7 @@ export function QuizSubmission({
     } finally {
       setIsSubmitting(false);
     }
-  }, [answers, assignmentId, gradeQuiz, onSubmissionComplete, router, toast, userId, draftKey, quizQuestions]);
+  }, [answers, assignmentId, gradeQuiz, onSubmissionComplete, router, toast, userId, draftKey, quizQuestions, isExam, timer]);
 
   // Handle max cautions reached - memoize to prevent recreating function on each render
   const handleMaxCautionsReached = useCallback(() => {

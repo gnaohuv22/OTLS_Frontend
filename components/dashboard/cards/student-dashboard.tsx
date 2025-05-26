@@ -506,19 +506,6 @@ export function StudentDashboard() {
     );
   }
 
-  // Empty state (no classrooms)
-  if (classrooms.length === 0) {
-    return (
-      <div className="space-y-6">
-        <h1 className="text-2xl font-semibold">Bảng điều khiển Học sinh</h1>
-        <EmptyState 
-          message="Bạn chưa được ghi danh vào lớp học nào. Vui lòng liên hệ giáo viên hoặc quản trị viên." 
-          icon={GraduationCap} 
-        />
-      </div>
-    );
-  }
-
   // Create overview stats data
   const overviewStatsData = [
     { 

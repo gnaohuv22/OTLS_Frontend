@@ -15,6 +15,9 @@ import { TimerDisplay } from '@/components/student/assignments/timer-display';
 const DRAFT_CONTENT_KEY = 'otls_draft_content';
 const AUTO_SAVE_INTERVAL_MS = 10000; // Auto-save every 10 seconds
 
+// Generate timer storage key (same as TimerDisplay component)
+const getTimerStorageKey = (timer: string) => `exam_timer_${timer}_${window.location.pathname}`;
+
 interface TextSubmissionProps {
   assignmentId: string;
   userId: string;
@@ -196,6 +199,17 @@ export function TextSubmission({
             localStorage.removeItem(draftKey);
           } catch (error) {
             console.error("Error removing saved draft:", error);
+          }
+        }
+        
+        // Clear timer from localStorage for exam mode
+        if (isExam && timer) {
+          try {
+            const timerKey = getTimerStorageKey(timer);
+            localStorage.removeItem(timerKey);
+            console.log("Timer cleared from localStorage after exam submission");
+          } catch (error) {
+            console.error("Error removing timer from localStorage:", error);
           }
         }
         
