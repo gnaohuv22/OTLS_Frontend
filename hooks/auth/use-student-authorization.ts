@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { StudentAuthorization } from '@/lib/auth/student-authorization';
-import { useToast } from '@/components/ui/use-toast';
 
 interface UseStudentAuthorizationProps {
   resourceType: 'class' | 'assignment' | 'material';
@@ -19,7 +17,7 @@ interface UseStudentAuthorizationReturn {
 
 /**
  * Hook to check if a student is authorized to access a specific resource
- * Automatically redirects to forbidden page if unauthorized
+ * Note: This hook does not handle redirects - use StudentAuthGuard component for automatic redirects
  */
 export function useStudentAuthorization({
   resourceType,
@@ -32,8 +30,6 @@ export function useStudentAuthorization({
   const [error, setError] = useState<string | null>(null);
   
   const { role, user } = useAuth();
-  const router = useRouter();
-  const { toast } = useToast();
 
   useEffect(() => {
     const checkAuthorization = async () => {
@@ -64,59 +60,23 @@ export function useStudentAuthorization({
         );
 
         setIsAuthorized(result.authorized);
-
-        if (!result.authorized && result.redirectUrl) {
-          // Show toast message before redirecting
-          toast({
-            title: 'Quyền truy cập bị từ chối',
-            description: getUnauthorizedMessage(resourceType),
-            variant: 'destructive',
-          });
-
-          // Redirect after a short delay to allow toast to show
-          setTimeout(() => {
-            router.push(result.redirectUrl!);
-          }, 1000);
-        }
       } catch (err) {
         console.error('Error checking student authorization:', err);
         setError('Lỗi khi kiểm tra quyền truy cập');
         setIsAuthorized(false);
-        
-        toast({
-          title: 'Lỗi',
-          description: 'Không thể kiểm tra quyền truy cập. Vui lòng thử lại.',
-          variant: 'destructive',
-        });
       } finally {
         setIsLoading(false);
       }
     };
 
     checkAuthorization();
-  }, [enabled, role, user?.userID, resourceType, resourceId, classId, router, toast]);
+  }, [enabled, role, user?.userID, resourceType, resourceId, classId]);
 
   return {
     isAuthorized,
     isLoading,
     error
   };
-}
-
-/**
- * Get appropriate unauthorized message based on resource type
- */
-function getUnauthorizedMessage(resourceType: 'class' | 'assignment' | 'material'): string {
-  switch (resourceType) {
-    case 'class':
-      return 'Bạn không được ghi danh vào lớp học này.';
-    case 'assignment':
-      return 'Bạn không có quyền truy cập bài tập này.';
-    case 'material':
-      return 'Bạn không có quyền truy cập tài liệu này.';
-    default:
-      return 'Bạn không có quyền truy cập tài nguyên này.';
-  }
 }
 
 /**
