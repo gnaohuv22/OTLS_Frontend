@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/lib/auth-context";
 import { AuthGuard } from "@/components/auth/auth-guard";
+import { StudentAuthGuard } from "@/components/auth/student-auth-guard";
 import { useTheme } from "next-themes";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -454,307 +455,312 @@ export default function AssignmentDetail() {
 
   return (
     <AuthGuard>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="container mx-auto p-4 space-y-6"
+      <StudentAuthGuard
+        resourceType="assignment"
+        resourceId={assignmentId}
       >
-        {/* Header */}
-        <AssignmentHeader 
-          title={assignment.title}
-          subject={assignment.subject}
-          role={role || ''}
-          assignmentId={assignmentId}
-          isExpired={isExpired}
-          remainingTime={remainingTime}
-          isExam={assignment.isExam}
-          timer={assignment.timer}
-          onDeleteClick={() => setShowDeleteDialog(true)}
-        />
-        
-        {/* Delete Dialog */}
-        <DeleteAssignmentDialog 
-          isOpen={showDeleteDialog}
-          onOpenChange={setShowDeleteDialog}
-          onDelete={handleDeleteAssignment}
-          isSubmitting={isSubmitting}
-        />
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="container mx-auto p-4 space-y-6"
+        >
+          {/* Header */}
+          <AssignmentHeader 
+            title={assignment.title}
+            subject={assignment.subject}
+            role={role || ''}
+            assignmentId={assignmentId}
+            isExpired={isExpired}
+            remainingTime={remainingTime}
+            isExam={assignment.isExam}
+            timer={assignment.timer}
+            onDeleteClick={() => setShowDeleteDialog(true)}
+          />
+          
+          {/* Delete Dialog */}
+          <DeleteAssignmentDialog 
+            isOpen={showDeleteDialog}
+            onOpenChange={setShowDeleteDialog}
+            onDelete={handleDeleteAssignment}
+            isSubmitting={isSubmitting}
+          />
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 lg:w-[500px]">
-            <TabsTrigger value="overview">Tổng quan</TabsTrigger>
-            
-            {/* For teachers, show submissions list with count */}
-            {(role === 'Teacher' || role === 'Admin') && (
-              <TabsTrigger value="submissions">
-                Bài nộp ({submissions.length})
-              </TabsTrigger>
-            )}
-            
-            {/* For teachers with quiz assignments, show preview tab */}
-            {(role === 'Teacher' || role === 'Admin') && assignment?.type === 'quiz' && (
-              <TabsTrigger value="preview">Xem trước</TabsTrigger>
-            )}
-            
-            {/* For students, always show their submissions */}
-            {role === 'Student' && (
-              <TabsTrigger value="submissions">Bài nộp</TabsTrigger>
-            )}
-            
-            <TabsTrigger value="details">Chi tiết</TabsTrigger>
-          </TabsList>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 lg:w-[500px]">
+              <TabsTrigger value="overview">Tổng quan</TabsTrigger>
+              
+              {/* For teachers, show submissions list with count */}
+              {(role === 'Teacher' || role === 'Admin') && (
+                <TabsTrigger value="submissions">
+                  Bài nộp ({submissions.length})
+                </TabsTrigger>
+              )}
+              
+              {/* For teachers with quiz assignments, show preview tab */}
+              {(role === 'Teacher' || role === 'Admin') && assignment?.type === 'quiz' && (
+                <TabsTrigger value="preview">Xem trước</TabsTrigger>
+              )}
+              
+              {/* For students, always show their submissions */}
+              {role === 'Student' && (
+                <TabsTrigger value="submissions">Bài nộp</TabsTrigger>
+              )}
+              
+              <TabsTrigger value="details">Chi tiết</TabsTrigger>
+            </TabsList>
 
-          {/* Tổng quan */}
-          <TabsContent value="overview" className="space-y-4 mt-6">
-            <AssignmentOverview 
-              assignment={assignment}
-              isExpired={isExpired}
-              role={role || ''}
-              onSubmitClick={handleGoToSubmitPage}
-            />
-          </TabsContent>
-
-          {/* Tab Bài nộp cho cả học sinh và giáo viên */}
-          <TabsContent value="submissions" className="space-y-4">
-            {/* For teachers, show submissions list */}
-            {(role === 'Teacher' || role === 'Admin') && (
-              <TeacherSubmissionList
-                assignmentId={assignmentId}
-                assignmentTitle={assignment.title}
-                assignmentType={assignment.type}
+            {/* Tổng quan */}
+            <TabsContent value="overview" className="space-y-4 mt-6">
+              <AssignmentOverview 
+                assignment={assignment}
+                isExpired={isExpired}
+                role={role || ''}
+                onSubmitClick={handleGoToSubmitPage}
               />
-            )}
-            
-            {/* For students, show their submission */}
-            {role === 'Student' && (
-              <div>
-                {studentSubmissionLoading ? (
-                  <Card className="w-full p-8">
-                    <CardContent className="flex justify-center items-center p-8">
-                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                    </CardContent>
-                  </Card>
-                ) : studentSubmission ? (
-                  <div className="space-y-4">
-                    <SubmissionDetail
-                      submissionId={studentSubmission.submissionId}
-                      assignmentId={assignmentId}
-                      assignmentTitle={assignment.title}
-                      allowEdit={false}
-                    />
-                    
-                    {/* Add retake button for non-exam assignments */}
-                    {!assignment.isExam && !isExpired && (
-                      <Card className="w-full p-4">
-                        <CardContent className="flex justify-between items-center">
-                          <div>
-                            <h3 className="font-medium">Bạn muốn làm lại bài tập này?</h3>
-                            <p className="text-sm text-muted-foreground">
-                              Bài tập không phải là bài kiểm tra, bạn có thể làm lại nhiều lần
-                            </p>
-                          </div>
-                          <Button onClick={handleGoToSubmitPage}>
-                            Làm lại bài
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    )}
-                  </div>
-                ) : (
-                  <Card className="w-full p-8">
-                    <CardContent className="flex flex-col justify-center items-center p-8">
-                      <p className="mb-4 text-muted-foreground">Bạn chưa nộp bài tập này</p>
-                      {!isExpired && (
-                        <Button onClick={handleGoToSubmitPage}>
-                          Làm bài ngay
-                        </Button>
-                      )}
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            )}
-          </TabsContent>
+            </TabsContent>
 
-          {/* Tab Quiz Preview for Teacher */}
-          {(role === 'Teacher' || role === 'Admin') && assignment?.type === 'quiz' && (
-            <TabsContent value="preview" className="space-y-4">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-medium">Quản lý câu hỏi</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Tạo và quản lý các câu hỏi cho bài kiểm tra trắc nghiệm
-                    </p>
-                  </div>
-                  <Button 
-                    onClick={handleAddQuizQuestion}
-                    disabled={isQuestionLoading}
-                    className="flex items-center gap-1"
-                  >
-                    {isQuestionLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Plus className="h-4 w-4" />
-                    )}
-                    Thêm câu hỏi
-                  </Button>
-                </CardHeader>
-                <CardContent>
-                  {isQuestionLoading ? (
-                    <div className="flex justify-center items-center py-8">
-                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    </div>
-                  ) : quizQuestions.length === 0 ? (
-                    <div className="text-center py-8">
-                      <p className="text-muted-foreground">Chưa có câu hỏi nào</p>
-                      <p className="text-sm text-muted-foreground">Nhấn "Thêm câu hỏi" để bắt đầu tạo câu hỏi</p>
+            {/* Tab Bài nộp cho cả học sinh và giáo viên */}
+            <TabsContent value="submissions" className="space-y-4">
+              {/* For teachers, show submissions list */}
+              {(role === 'Teacher' || role === 'Admin') && (
+                <TeacherSubmissionList
+                  assignmentId={assignmentId}
+                  assignmentTitle={assignment.title}
+                  assignmentType={assignment.type}
+                />
+              )}
+              
+              {/* For students, show their submission */}
+              {role === 'Student' && (
+                <div>
+                  {studentSubmissionLoading ? (
+                    <Card className="w-full p-8">
+                      <CardContent className="flex justify-center items-center p-8">
+                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                      </CardContent>
+                    </Card>
+                  ) : studentSubmission ? (
+                    <div className="space-y-4">
+                      <SubmissionDetail
+                        submissionId={studentSubmission.submissionId}
+                        assignmentId={assignmentId}
+                        assignmentTitle={assignment.title}
+                        allowEdit={false}
+                      />
+                      
+                      {/* Add retake button for non-exam assignments */}
+                      {!assignment.isExam && !isExpired && (
+                        <Card className="w-full p-4">
+                          <CardContent className="flex justify-between items-center">
+                            <div>
+                              <h3 className="font-medium">Bạn muốn làm lại bài tập này?</h3>
+                              <p className="text-sm text-muted-foreground">
+                                Bài tập không phải là bài kiểm tra, bạn có thể làm lại nhiều lần
+                              </p>
+                            </div>
+                            <Button onClick={handleGoToSubmitPage}>
+                              Làm lại bài
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      )}
                     </div>
                   ) : (
-                    <div className="space-y-4">
-                      {quizQuestions.map((question, index) => (
-                        <Card key={question.quizQuestionId} className="overflow-hidden">
-                          <div className="p-4 bg-muted/50">
-                            <div className="flex justify-between items-start">
-                              <div className="flex-1">
-                                <h4 className="font-medium">Câu hỏi {index + 1}</h4>
-                                <p className="text-sm mt-1">{question.question}</p>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon"
-                                  onClick={() => setActiveQuestion(question)}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon"
-                                  onClick={() => handleDeleteQuizQuestion(question.quizQuestionId)}
-                                  className="text-destructive hover:text-destructive"
-                                >
-                                  <Trash className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-                            <div className="mt-2 grid gap-2">
-                              {question.options.map((option: string, optIndex: number) => (
-                                <div 
-                                  key={optIndex} 
-                                  className={`p-2 rounded-md text-sm ${question.correctOptions.includes(optIndex) ? 'bg-primary/20 text-primary' : 'bg-muted'}`}
-                                >
-                                  {option} {question.correctOptions.includes(optIndex) && '✓'}
-                                </div>
-                              ))}
-                            </div>
-                            {question.explanation && (
-                              <div className="mt-3 text-sm p-2 border-t border-muted">
-                                <p className="font-medium">Giải thích:</p>
-                                <p className="text-muted-foreground">{question.explanation}</p>
-                              </div>
-                            )}
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
+                    <Card className="w-full p-8">
+                      <CardContent className="flex flex-col justify-center items-center p-8">
+                        <p className="mb-4 text-muted-foreground">Bạn chưa nộp bài tập này</p>
+                        {!isExpired && (
+                          <Button onClick={handleGoToSubmitPage}>
+                            Làm bài ngay
+                          </Button>
+                        )}
+                      </CardContent>
+                    </Card>
                   )}
-                </CardContent>
-              </Card>
+                </div>
+              )}
             </TabsContent>
-          )}
 
-          {/* Tab Chi tiết */}
-          <TabsContent value="details" className="space-y-4 mt-6">
-            <AssignmentDetails 
-              assignment={assignment}
-              gradedCount={gradedCount}
-              submittedCount={submittedCount}
-              lateCount={lateCount}
-              role={role || ''}
-              userSubmissionStatus={studentSubmission?.status}
-              onViewSubmissions={() => setActiveTab("submissions")}
-            />
-          </TabsContent>
-        </Tabs>
-      </motion.div>
-      
-      {/* Edit Question Dialog */}
-      {activeQuestion && editedQuestion && (
-        <Dialog 
-          open={!!activeQuestion} 
-          onOpenChange={(open) => !open && setActiveQuestion(null)}
-        >
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Chỉnh sửa câu hỏi</DialogTitle>
-            </DialogHeader>
-            
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="question">Câu hỏi</Label>
-                <Textarea 
-                  id="question" 
-                  value={editedQuestion.question} 
-                  onChange={(e) => handleInputChange('question', e.target.value)}
-                  rows={3}
-                />
-              </div>
-              
-              <div className="grid gap-2">
-                <Label>Các phương án</Label>
-                {editedQuestion.options.map((option, index) => (
-                  <div key={index} className="flex items-center gap-3">
-                    <Checkbox 
-                      id={`option-${index}`} 
-                      checked={editedQuestion.correctOptions.includes(index)}
-                      onCheckedChange={(checked) => handleCorrectOptionChange(index, checked as boolean)}
-                    />
-                    <div className="flex-1">
-                      <Input
-                        value={option}
-                        onChange={(e) => handleOptionChange(index, e.target.value)}
-                        placeholder={`Phương án ${index + 1}`}
-                      />
+            {/* Tab Quiz Preview for Teacher */}
+            {(role === 'Teacher' || role === 'Admin') && assignment?.type === 'quiz' && (
+              <TabsContent value="preview" className="space-y-4">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-medium">Quản lý câu hỏi</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Tạo và quản lý các câu hỏi cho bài kiểm tra trắc nghiệm
+                      </p>
                     </div>
-                  </div>
-                ))}
+                    <Button 
+                      onClick={handleAddQuizQuestion}
+                      disabled={isQuestionLoading}
+                      className="flex items-center gap-1"
+                    >
+                      {isQuestionLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Plus className="h-4 w-4" />
+                      )}
+                      Thêm câu hỏi
+                    </Button>
+                  </CardHeader>
+                  <CardContent>
+                    {isQuestionLoading ? (
+                      <div className="flex justify-center items-center py-8">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                      </div>
+                    ) : quizQuestions.length === 0 ? (
+                      <div className="text-center py-8">
+                        <p className="text-muted-foreground">Chưa có câu hỏi nào</p>
+                        <p className="text-sm text-muted-foreground">Nhấn "Thêm câu hỏi" để bắt đầu tạo câu hỏi</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {quizQuestions.map((question, index) => (
+                          <Card key={question.quizQuestionId} className="overflow-hidden">
+                            <div className="p-4 bg-muted/50">
+                              <div className="flex justify-between items-start">
+                                <div className="flex-1">
+                                  <h4 className="font-medium">Câu hỏi {index + 1}</h4>
+                                  <p className="text-sm mt-1">{question.question}</p>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon"
+                                    onClick={() => setActiveQuestion(question)}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon"
+                                    onClick={() => handleDeleteQuizQuestion(question.quizQuestionId)}
+                                    className="text-destructive hover:text-destructive"
+                                  >
+                                    <Trash className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                              <div className="mt-2 grid gap-2">
+                                {question.options.map((option: string, optIndex: number) => (
+                                  <div 
+                                    key={optIndex} 
+                                    className={`p-2 rounded-md text-sm ${question.correctOptions.includes(optIndex) ? 'bg-primary/20 text-primary' : 'bg-muted'}`}
+                                  >
+                                    {option} {question.correctOptions.includes(optIndex) && '✓'}
+                                  </div>
+                                ))}
+                              </div>
+                              {question.explanation && (
+                                <div className="mt-3 text-sm p-2 border-t border-muted">
+                                  <p className="font-medium">Giải thích:</p>
+                                  <p className="text-muted-foreground">{question.explanation}</p>
+                                </div>
+                              )}
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            )}
+
+            {/* Tab Chi tiết */}
+            <TabsContent value="details" className="space-y-4 mt-6">
+              <AssignmentDetails 
+                assignment={assignment}
+                gradedCount={gradedCount}
+                submittedCount={submittedCount}
+                lateCount={lateCount}
+                role={role || ''}
+                userSubmissionStatus={studentSubmission?.status}
+                onViewSubmissions={() => setActiveTab("submissions")}
+              />
+            </TabsContent>
+          </Tabs>
+        </motion.div>
+        
+        {/* Edit Question Dialog */}
+        {activeQuestion && editedQuestion && (
+          <Dialog 
+            open={!!activeQuestion} 
+            onOpenChange={(open) => !open && setActiveQuestion(null)}
+          >
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Chỉnh sửa câu hỏi</DialogTitle>
+              </DialogHeader>
+              
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="question">Câu hỏi</Label>
+                  <Textarea 
+                    id="question" 
+                    value={editedQuestion.question} 
+                    onChange={(e) => handleInputChange('question', e.target.value)}
+                    rows={3}
+                  />
+                </div>
+                
+                <div className="grid gap-2">
+                  <Label>Các phương án</Label>
+                  {editedQuestion.options.map((option, index) => (
+                    <div key={index} className="flex items-center gap-3">
+                      <Checkbox 
+                        id={`option-${index}`} 
+                        checked={editedQuestion.correctOptions.includes(index)}
+                        onCheckedChange={(checked) => handleCorrectOptionChange(index, checked as boolean)}
+                      />
+                      <div className="flex-1">
+                        <Input
+                          value={option}
+                          onChange={(e) => handleOptionChange(index, e.target.value)}
+                          placeholder={`Phương án ${index + 1}`}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="explanation">Giải thích</Label>
+                  <Textarea 
+                    id="explanation" 
+                    value={editedQuestion.explanation} 
+                    onChange={(e) => handleInputChange('explanation', e.target.value)}
+                    rows={2}
+                    placeholder="Giải thích đáp án đúng"
+                  />
+                </div>
               </div>
               
-              <div className="grid gap-2">
-                <Label htmlFor="explanation">Giải thích</Label>
-                <Textarea 
-                  id="explanation" 
-                  value={editedQuestion.explanation} 
-                  onChange={(e) => handleInputChange('explanation', e.target.value)}
-                  rows={2}
-                  placeholder="Giải thích đáp án đúng"
-                />
-              </div>
-            </div>
-            
-            <DialogFooter className="sm:justify-end">
-              <DialogClose asChild>
-                <Button variant="outline" type="button">Hủy</Button>
-              </DialogClose>
-              <Button 
-                type="button" 
-                onClick={handleSaveEditedQuestion}
-                disabled={isQuestionLoading}
-              >
-                {isQuestionLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Đang lưu...
-                  </>
-                ) : (
-                  'Lưu thay đổi'
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
+              <DialogFooter className="sm:justify-end">
+                <DialogClose asChild>
+                  <Button variant="outline" type="button">Hủy</Button>
+                </DialogClose>
+                <Button 
+                  type="button" 
+                  onClick={handleSaveEditedQuestion}
+                  disabled={isQuestionLoading}
+                >
+                  {isQuestionLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Đang lưu...
+                    </>
+                  ) : (
+                    'Lưu thay đổi'
+                  )}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
+      </StudentAuthGuard>
     </AuthGuard>
   );
 } 

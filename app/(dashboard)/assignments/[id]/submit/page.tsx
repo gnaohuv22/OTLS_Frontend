@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/lib/auth-context";
 import { AuthGuard } from "@/components/auth/auth-guard";
+import { StudentAuthGuard } from "@/components/auth/student-auth-guard";
 import { getAssignmentById, getQuizsByAssignmentId, getSubmissionsByUserId } from "@/lib/api/assignment";
 import { QuizSubmission } from "@/components/student/submissions/quiz-submission";
 import { TextSubmission } from "@/components/student/submissions/text-submission";
@@ -178,60 +179,70 @@ export default function AssignmentSubmitPage() {
   
   return (
     <AuthGuard>
-      <motion.div
-        className="w-full min-h-screen bg-background"
-        initial="hidden"
-        animate="show"
-        exit="exit"
-        variants={fadeInUp}
+      <StudentAuthGuard
+        resourceType="assignment"
+        resourceId={assignmentId}
       >
-        {/* Header */}
-        <div className="p-4 border-b sticky top-0 bg-background/80 backdrop-blur-sm z-10">
-          <div className="container mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" onClick={handleGoBack} className="shrink-0">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-              <div>
-                <h1 className="text-xl font-bold truncate">{assignment.title}</h1>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span>{assignment.subject?.subjectName || "N/A"}</span>
-                  {isExam && (
-                    <Badge variant="destructive" className="ml-2">
-                      Bài Kiểm Tra
-                    </Badge>
-                  )}
+        <motion.div
+          className="w-full min-h-screen bg-background"
+          initial="hidden"
+          animate="show"
+          exit="exit"
+          variants={fadeInUp}
+        >
+          {/* Header */}
+          <div className="p-4 border-b sticky top-0 bg-background/80 backdrop-blur-sm z-10">
+            <div className="container mx-auto flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Button variant="ghost" size="icon" onClick={handleGoBack} className="shrink-0">
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+                <div>
+                  <h1 className="text-xl font-bold truncate">{assignment.title}</h1>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <span>{assignment.subject?.subjectName || "N/A"}</span>
+                    {isExam && (
+                      <Badge variant="destructive" className="ml-2">
+                        Bài kiểm tra
+                      </Badge>
+                    )}
+                  </div>
                 </div>
+              </div>
+              
+              {/* Due date info */}
+              <div className="text-right text-sm text-muted-foreground hidden sm:block">
+                Hạn nộp: {new Date(assignment.dueDate).toLocaleDateString('vi-VN')}
               </div>
             </div>
           </div>
-        </div>
-        
-        {/* Content */}
-        <div className="container mx-auto p-4">
-          {assignmentType === 'quiz' ? (
-            <QuizSubmission
-              assignmentId={assignmentId}
-              userId={user?.userID || ""}
-              quizQuestions={quizQuestions}
-              onSubmissionComplete={handleSubmissionComplete}
-              timer={assignment.timer}
-              isExam={isExam}
-              maxPoints={assignment.maxPoints || 100}
-            />
-          ) : (
-            <TextSubmission
-              assignmentId={assignmentId}
-              userId={user?.userID || ""}
-              assignmentTitle={assignment.title}
-              onSubmissionComplete={handleSubmissionComplete}
-              timer={assignment.timer}
-              isExam={isExam}
-              maxPoints={assignment.maxPoints || 100}
-            />
-          )}
-        </div>
-      </motion.div>
+          
+          {/* Content */}
+          <div className="container mx-auto p-4">
+            {assignmentType === "quiz" ? (
+              <QuizSubmission
+                assignmentId={assignmentId}
+                userId={user?.userID || ""}
+                quizQuestions={quizQuestions}
+                onSubmissionComplete={handleSubmissionComplete}
+                timer={assignment.timer}
+                isExam={isExam}
+                maxPoints={assignment.maxPoints || 100}
+              />
+            ) : (
+              <TextSubmission
+                assignmentId={assignmentId}
+                userId={user?.userID || ""}
+                assignmentTitle={assignment.title}
+                onSubmissionComplete={handleSubmissionComplete}
+                timer={assignment.timer}
+                isExam={isExam}
+                maxPoints={assignment.maxPoints || 100}
+              />
+            )}
+          </div>
+        </motion.div>
+      </StudentAuthGuard>
     </AuthGuard>
   );
 } 

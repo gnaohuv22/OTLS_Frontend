@@ -73,6 +73,7 @@ export interface ClassFormModalProps {
   onOpenChange: (open: boolean) => void;
   onSubmitClass: (classData: any) => Promise<void>;
   classDetail?: ClassDetail;
+  rawSchedules?: ClassSchedule[];
   mode: 'create' | 'edit';
 }
 
@@ -81,6 +82,7 @@ function ClassFormModalComponent({
   onOpenChange,
   onSubmitClass,
   classDetail,
+  rawSchedules,
   mode = 'create'
 }: ClassFormModalProps) {
   const { toast } = useToast();
@@ -131,41 +133,26 @@ function ClassFormModalComponent({
       const descLines = classDetail.description?.split('\n').filter(line => !line.startsWith('Môn học:'));
       setClassDesc(descLines ? descLines.join('\n').trim() : '');
       
-      // Set schedules if available
-      if (classDetail.schedule) {
-        // Convert schedule to scheduleItems
-        // Assuming schedule and time are comma-separated lists
-        const days = classDetail.schedule.split(', ');
-        const times = classDetail.time.split(', ');
+      // Use raw schedule data instead of parsing formatted strings
+      if (rawSchedules && rawSchedules.length > 0) {
+        const scheduleItems: ScheduleItem[] = rawSchedules.map((schedule, index) => ({
+          id: schedule.classScheduleId || (index + 1),
+          dayOfWeek: schedule.dayOfWeek,
+          startTime: schedule.startTime.substring(0, 5), // Remove seconds from time
+          endTime: schedule.endTime.substring(0, 5), // Remove seconds from time
+          day: DAY_OF_WEEK_MAP[schedule.dayOfWeek] || 'Không xác định'
+        }));
         
-        // Create schedule items
-        if (days.length > 0 && times.length > 0) {
-          const scheduleItems: ScheduleItem[] = [];
-          
-          for (let i = 0; i < Math.min(days.length, times.length); i++) {
-            const day = days[i];
-            const timeRange = times[i];
-            const [startTime, endTime] = timeRange.split('-');
-            
-            scheduleItems.push({
-              id: i + 1,
-              dayOfWeek: DAY_NAME_TO_NUMBER[day] || 1,
-              startTime: startTime.trim(),
-              endTime: endTime.trim(),
-              day
-            });
-          }
-          
-          if (scheduleItems.length > 0) {
-            setClassSchedules(scheduleItems);
-          }
-        }
+        setClassSchedules(scheduleItems);
+      } else {
+        // Fallback to default schedule if no raw data available
+        setClassSchedules([]);
       }
     } else {
       // Reset form for create mode
       resetForm();
     }
-  }, [mode, classDetail, isOpen]);
+  }, [mode, classDetail, rawSchedules, isOpen]);
 
   // Thêm lịch học mới
   const addSchedule = () => {

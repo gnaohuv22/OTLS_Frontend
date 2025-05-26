@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { Tabs } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import { AuthGuard } from '@/components/auth/auth-guard';
+import { StudentAuthGuard } from '@/components/auth/student-auth-guard';
 import { useAuth } from '@/lib/auth-context';
 import { ClassroomService, ClassSchedule } from '@/lib/api/classes';
 
@@ -580,22 +581,27 @@ export default function ClassDetailPage() {
 
   return (
     <AuthGuard>
-      <AnimatedPageWrapper>
-        <div className="container mx-auto py-6 space-y-6">
-          <ClassDetailHeader classDetail={classDetail} />
-          
-          <ClassInfoCards 
-            classDetail={classDetail} 
-            formatDate={formatDate} 
-            getNextClassStatus={getNextClassStatus} 
-          />
-          
-          <div className="flex flex-col space-y-4">
-            <Tabs value={activeTab} onValueChange={handleTabChange}>
+      <StudentAuthGuard
+        resourceType="class"
+        resourceId={classId}
+      >
+        <AnimatedPageWrapper>
+          <div className="container mx-auto py-6 space-y-6">
+            <ClassDetailHeader 
+              classDetail={classDetail}
+            />
+            
+            <ClassInfoCards 
+              classDetail={classDetail}
+              formatDate={formatDate}
+              getNextClassStatus={getNextClassStatus}
+            />
+            
+            <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
               <ClassTabNav 
                 activeTab={activeTab} 
                 handleTabChange={handleTabChange} 
-                role={role} 
+                role={role}
                 isMeetingActive={isMeetingActive} 
               />
               
@@ -655,48 +661,49 @@ export default function ClassDetailPage() {
                 />
               </CustomTabsContent>
             
-              
-              <CustomTabsContent value="settings" className="pt-6" transitionType="slideUp">
-                <SettingsTab 
-                  classDetail={classDetail}
-                  openEditClassModal={openEditClassModal}
-                  role={role}
-                />
-              </CustomTabsContent>
+              {role === 'Teacher' && (
+                <CustomTabsContent value="settings" className="pt-6" transitionType="slideUp">
+                  <SettingsTab 
+                    classDetail={classDetail}
+                    openEditClassModal={openEditClassModal}
+                    role={role}
+                  />
+                </CustomTabsContent>
+              )}
             </Tabs>
+            
+            <AddStudentModal
+              isOpen={showAddStudentModal}
+              setIsOpen={setShowAddStudentModal}
+              newStudentEmail={newStudentEmail}
+              setNewStudentEmail={setNewStudentEmail}
+              studentsToAdd={studentsToAdd}
+              setStudentsToAdd={setStudentsToAdd}
+              addStudentEmail={addStudentEmail}
+              removeStudentEmail={removeStudentEmail}
+              handleInviteStudents={handleInviteStudents}
+              classroomId={classDetail.classroomId || classId} 
+            />
+            
+            <ClassFormModal
+              isOpen={showEditClassModal}
+              onOpenChange={setShowEditClassModal}
+              onSubmitClass={handleUpdateClass}
+              classDetail={classDetail}
+              rawSchedules={classSchedules}
+              mode="edit"
+            />
+            
+            <ScheduleModal
+              isOpen={showScheduleModal}
+              setIsOpen={setShowScheduleModal}
+              classId={classId}
+              classSchedules={classSchedules}
+              onSchedulesUpdated={handleSchedulesUpdated}
+            />
           </div>
-          
-          {/* Modals */}
-          <AddStudentModal 
-            isOpen={showAddStudentModal}
-            setIsOpen={setShowAddStudentModal}
-            newStudentEmail={newStudentEmail}
-            setNewStudentEmail={setNewStudentEmail}
-            studentsToAdd={studentsToAdd}
-            setStudentsToAdd={setStudentsToAdd}
-            addStudentEmail={addStudentEmail}
-            removeStudentEmail={removeStudentEmail}
-            handleInviteStudents={handleInviteStudents}
-            classroomId={classDetail.classroomId || classId} 
-          />
-          
-          <ClassFormModal 
-            isOpen={showEditClassModal}
-            onOpenChange={setShowEditClassModal}
-            onSubmitClass={handleUpdateClass}
-            classDetail={classDetail}
-            mode="edit"
-          />
-          
-          <ScheduleModal 
-            isOpen={showScheduleModal}
-            setIsOpen={setShowScheduleModal}
-            classId={classId}
-            classSchedules={classSchedules}
-            onSchedulesUpdated={handleSchedulesUpdated}
-          />
-        </div>
-      </AnimatedPageWrapper>
+        </AnimatedPageWrapper>
+      </StudentAuthGuard>
     </AuthGuard>
   );
 }
