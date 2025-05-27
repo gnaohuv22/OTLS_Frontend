@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/tooltip";
 import { AuthService, RegisterRequest } from '@/lib/api/auth';
 import { validateUserField, passwordRequirements, genderOptions } from '@/lib/validations/user-validation';
+import { createUserAndSendVerification } from '@/lib/api/firebase-auth';
 
 export function RegisterForm() {
   const router = useRouter();
@@ -130,6 +131,16 @@ export function RegisterForm() {
       return;
     }
 
+    // Kiểm tra email là bắt buộc cho xác thực Firebase
+    if (!formData.email) {
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: "Email là bắt buộc để xác thực tài khoản",
+      });
+      return;
+    }
+
     // Kiểm tra bổ sung cho số điện thoại
     if (!/^(0[3|5|7|8|9])+([0-9]{8})$/.test(formData.phoneNumber)) {
       toast({
@@ -163,7 +174,9 @@ export function RegisterForm() {
     setIsLoading(true);
     
     try {
+      console.log('[RegisterForm] Bắt đầu quá trình đăng ký với Firebase email verification');
       
+      // Bước 1: Đăng ký tài khoản với backend
       const registerData: RegisterRequest = {
         email: formData.email,
         password: formData.password,
@@ -176,24 +189,39 @@ export function RegisterForm() {
         ...(formData.avatar ? { avatar: formData.avatar } : {})
       };
       
-      // Đo thời gian gọi API
-      const startTime = performance.now();
+      console.log('[RegisterForm] Đăng ký tài khoản với backend...');
       const response = await AuthService.register(registerData);
-      const endTime = performance.now();
       
       if (response.success) {
-        toast({
-          title: "Đăng ký thành công",
-          description: "Vui lòng xác thực số điện thoại để hoàn tất đăng ký",
-        });
+        console.log('[RegisterForm] Đăng ký backend thành công, đang tạo tài khoản Firebase...');
         
-        // Lưu số điện thoại và username vào localStorage để sử dụng ở trang xác thực
-        localStorage.setItem('registerPhoneNumber', formData.phoneNumber);
-        localStorage.setItem('registerUsername', formData.username);
+        // Bước 2: Tạo tài khoản Firebase và gửi email xác thực
+        const firebaseResult = await createUserAndSendVerification(formData.email, formData.password);
         
-        // Chuyển hướng đến trang xác thực số điện thoại
-        router.push('/verify-phone');
+        if (firebaseResult.success) {
+          console.log('[RegisterForm] Tạo tài khoản Firebase và gửi email thành công');
+          
+          toast({
+            title: "Đăng ký thành công!",
+            description: "Vui lòng kiểm tra email để xác thực tài khoản",
+          });
+          
+          // Lưu thông tin vào localStorage để sử dụng ở trang xác thực email
+          localStorage.setItem('registerEmail', formData.email);
+          localStorage.setItem('registerUsername', formData.username);
+          
+          // Chuyển hướng đến trang xác thực email
+          router.push('/verify-email');
+        } else {
+          console.error('[RegisterForm] Lỗi khi tạo tài khoản Firebase:', firebaseResult.error);
+          toast({
+            variant: "destructive",
+            title: "Lỗi xác thực email",
+            description: firebaseResult.error || "Không thể gửi email xác thực. Vui lòng thử lại.",
+          });
+        }
       } else {
+        console.error('[RegisterForm] Đăng ký backend thất bại:', response.message);
         toast({
           variant: "destructive",
           title: "Đăng ký thất bại",
@@ -201,6 +229,7 @@ export function RegisterForm() {
         });
       }
     } catch (error: any) {
+      console.error('[RegisterForm] Lỗi trong quá trình đăng ký:', error);
       toast({
         variant: "destructive",
         title: "Đăng ký thất bại",
@@ -317,7 +346,7 @@ export function RegisterForm() {
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="phoneNumber">
-              Số điện thoại phụ huynh<RequiredField />
+              Số điện thoại<RequiredField />
             </Label>
             <InputWithIcon
               id="phoneNumber"
@@ -329,13 +358,13 @@ export function RegisterForm() {
               onChange={handleInputChange}
               error={errors.phoneNumber}
               disabled={isLoading}
-              helpText="Số điện thoại phụ huynh sẽ được sử dụng để liên hệ và xác thực tài khoản"
+              helpText="Số điện thoại sẽ được sử dụng để nhận thông báo trong tương lai"
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="email">
-              Email
+              Email<RequiredField />
             </Label>
             <InputWithIcon
               id="email"
@@ -347,6 +376,7 @@ export function RegisterForm() {
               onChange={handleInputChange}
               error={errors.email}
               disabled={isLoading}
+              helpText="Email sẽ được sử dụng để xác thực tài khoản"
             />
           </div>
 

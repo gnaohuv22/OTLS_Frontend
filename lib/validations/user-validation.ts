@@ -21,9 +21,8 @@ export const registerFormSchema = z.object({
   phoneNumber: z.string()
     .regex(/^(0[3|5|7|8|9])+([0-9]{8})$/, 'Số điện thoại không hợp lệ (VD: 0912345678)'),
   email: z.string()
-    .email('Email không hợp lệ')
-    .optional()
-    .or(z.literal('')),
+    .min(1, 'Email là bắt buộc')
+    .email('Email không hợp lệ'),
   password: z.string()
     .min(8, 'Mật khẩu phải có ít nhất 8 ký tự')
     .regex(/(?=.*[a-z])/, 'Mật khẩu phải chứa ít nhất 1 chữ thường')
@@ -159,7 +158,10 @@ export const validateUserField = (name: string, value: string, isStudent: boolea
       break;
 
     case 'email':
-      if (value && !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(value)) {
+      // Email validation - required for registration
+      if (!value) {
+        error.message = 'Vui lòng nhập email';
+      } else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(value)) {
         error.message = 'Email không hợp lệ';
       }
       break;
