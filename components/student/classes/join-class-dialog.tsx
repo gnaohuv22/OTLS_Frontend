@@ -68,7 +68,7 @@ export function JoinClassDialog({ onJoinClass }: JoinClassDialogProps) {
         <DialogHeader>
           <DialogTitle>Tham gia lớp học</DialogTitle>
           <DialogDescription>
-            Nhập mã lớp học để tham gia. Mã này được cung cấp bởi giáo viên của bạn.
+            Tính năng này chưa được hỗ trợ. Vui lòng liên hệ giáo viên của bạn.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -79,7 +79,7 @@ export function JoinClassDialog({ onJoinClass }: JoinClassDialogProps) {
               placeholder="Ví dụ: ABC123"
               value={code}
               onChange={(e) => setCode(e.target.value)}
-              disabled={isLoading}
+              disabled={true}
             />
           </div>
           <div className="flex justify-end gap-2">
@@ -87,11 +87,11 @@ export function JoinClassDialog({ onJoinClass }: JoinClassDialogProps) {
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
-              disabled={isLoading}
+              disabled={true}
             >
               Hủy
             </Button>
-            <Button type="submit" disabled={isLoading}>
+            <Button type="submit" disabled={true}>
               {isLoading ? "Đang xử lý..." : "Tham gia"}
             </Button>
           </div>

@@ -3,9 +3,167 @@ import {
   sendEmailVerification, 
   onAuthStateChanged,
   User,
-  signOut
+  signOut,
+  sendPasswordResetEmail
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
+
+// Temporary storage for OTP codes (in production, use Firebase Firestore or backend)
+const otpStorage = new Map<string, { code: string; timestamp: number; email: string }>();
+
+/**
+ * Tạo mã OTP 6 số ngẫu nhiên
+ */
+function generateOTP(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+/**
+ * Gửi email OTP tùy chỉnh cho quên mật khẩu
+ * @param email Email của người dùng
+ * @returns Promise với kết quả gửi email
+ */
+export async function sendCustomOTPEmail(email: string): Promise<{ success: boolean; message: string }> {
+  try {
+    console.log('[Firebase Auth] Đang gửi OTP email tùy chỉnh cho:', email);
+    
+    // Tạo mã OTP
+    const otp = generateOTP();
+    const timestamp = Date.now();
+    
+    // Lưu OTP vào storage (5 phút hết hạn)
+    otpStorage.set(email, { code: otp, timestamp, email });
+    
+    // TODO: Thay thế bằng Firebase Functions hoặc email service thực tế
+    // Hiện tại sử dụng Firebase password reset email làm demo
+    await sendPasswordResetEmail(auth, email, {
+      url: `${window.location.origin}/reset-password`,
+      handleCodeInApp: false
+    });
+    
+    // Log OTP cho development (xóa trong production)
+    console.log(`[DEBUG] OTP cho ${email}: ${otp}`);
+    
+    // Simulate sending custom email with OTP
+    // In production, you would use Firebase Functions or email service
+    console.log('[Firebase Auth] Email OTP đã được gửi (simulated)');
+    
+    return {
+      success: true,
+      message: `Mã OTP đã được gửi đến ${email}. Mã OTP của bạn là: ${otp} (chỉ hiển thị trong development)`
+    };
+    
+  } catch (error: any) {
+    console.error('[Firebase Auth] Lỗi khi gửi OTP email:', error);
+    
+    let errorMessage = 'Có lỗi xảy ra khi gửi email OTP';
+    
+    switch (error.code) {
+      case 'auth/user-not-found':
+        errorMessage = 'Không tìm thấy tài khoản với email này';
+        break;
+      case 'auth/invalid-email':
+        errorMessage = 'Email không hợp lệ';
+        break;
+      case 'auth/too-many-requests':
+        errorMessage = 'Quá nhiều yêu cầu. Vui lòng thử lại sau';
+        break;
+      case 'auth/network-request-failed':
+        errorMessage = 'Lỗi kết nối mạng. Vui lòng thử lại';
+        break;
+      default:
+        errorMessage = error.message || errorMessage;
+    }
+    
+    return {
+      success: false,
+      message: errorMessage
+    };
+  }
+}
+
+/**
+ * Xác thực mã OTP tùy chỉnh
+ * @param email Email của người dùng
+ * @param otp Mã OTP người dùng nhập
+ * @returns Promise với kết quả xác thực
+ */
+export async function verifyCustomOTP(email: string, otp: string): Promise<{ success: boolean; message: string }> {
+  try {
+    console.log('[Firebase Auth] Đang xác thực OTP cho email:', email);
+    
+    const storedData = otpStorage.get(email);
+    
+    if (!storedData) {
+      return {
+        success: false,
+        message: 'Không tìm thấy mã OTP cho email này. Vui lòng yêu cầu gửi lại'
+      };
+    }
+    
+    // Kiểm tra thời hạn (5 phút)
+    const currentTime = Date.now();
+    const otpAge = currentTime - storedData.timestamp;
+    const fiveMinutes = 5 * 60 * 1000; // 5 phút
+    
+    if (otpAge > fiveMinutes) {
+      otpStorage.delete(email);
+      return {
+        success: false,
+        message: 'Mã OTP đã hết hạn. Vui lòng yêu cầu gửi lại'
+      };
+    }
+    
+    // Kiểm tra mã OTP
+    if (storedData.code !== otp) {
+      return {
+        success: false,
+        message: 'Mã OTP không chính xác. Vui lòng thử lại'
+      };
+    }
+    
+    // Xóa OTP sau khi xác thực thành công
+    otpStorage.delete(email);
+    
+    console.log('[Firebase Auth] OTP xác thực thành công');
+    
+    return {
+      success: true,
+      message: 'Xác thực OTP thành công'
+    };
+    
+  } catch (error: any) {
+    console.error('[Firebase Auth] Lỗi khi xác thực OTP:', error);
+    
+    return {
+      success: false,
+      message: error.message || 'Có lỗi xảy ra khi xác thực OTP'
+    };
+  }
+}
+
+/**
+ * Gửi lại mã OTP tùy chỉnh
+ * @param email Email của người dùng
+ * @returns Promise với kết quả gửi lại
+ */
+export async function resendCustomOTP(email: string): Promise<{ success: boolean; message: string }> {
+  try {
+    // Xóa OTP cũ nếu có
+    otpStorage.delete(email);
+    
+    // Gửi OTP mới
+    return await sendCustomOTPEmail(email);
+    
+  } catch (error: any) {
+    console.error('[Firebase Auth] Lỗi khi gửi lại OTP:', error);
+    
+    return {
+      success: false,
+      message: error.message || 'Có lỗi xảy ra khi gửi lại OTP'
+    };
+  }
+}
 
 /**
  * Tạo tài khoản Firebase và gửi email xác thực

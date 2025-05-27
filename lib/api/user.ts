@@ -275,4 +275,28 @@ export const UserService = {
       throw new Error(error.message || 'Không thể kiểm tra thông tin người dùng');
     }
   },
+
+  /**
+   * Lấy thông tin người dùng theo email
+   * @param email Email của người dùng
+   * @returns Thông tin user nếu tồn tại
+   */
+  getUserByEmail: async (email: string): Promise<UserInformation> => {
+    try {
+      console.log('[Debug] Đang tìm người dùng theo email:', email);
+      
+      const response = await api.get<ApiResponse<UserInformation>>(
+        `/auth/get-user-by-email/${encodeURIComponent(email)}`
+      );
+      
+      if (response.data?.isValid && response.data.data) {
+        return response.data.data;
+      }
+      
+      throw new Error(response.data?.message || 'Không tìm thấy người dùng với email này');
+    } catch (error: any) {
+      console.error('Lỗi khi tìm người dùng theo email:', error);
+      throw new Error(error.message || 'Không thể tìm thông tin người dùng');
+    }
+  },
 }; 
