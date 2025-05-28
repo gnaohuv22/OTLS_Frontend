@@ -725,12 +725,20 @@ export class AnnouncementService {
         authorName: userData.name,
         authorRole: userData.role,
         announcementId: commentData.announcementId,
-        ...(commentData.parentCommentId && { parentCommentId: commentData.parentCommentId }),
-        mentions: commentData.mentions,
         isEdited: false,
         createdAt: now as Timestamp,
         updatedAt: now as Timestamp
       };
+
+      // Only add parentCommentId if it exists
+      if (commentData.parentCommentId) {
+        firebaseComment.parentCommentId = commentData.parentCommentId;
+      }
+
+      // Only add mentions if they exist and are not empty
+      if (commentData.mentions && commentData.mentions.length > 0) {
+        firebaseComment.mentions = commentData.mentions;
+      }
 
       const docRef = await addDoc(collection(db, 'comments'), firebaseComment);
 
@@ -784,13 +792,25 @@ export class AnnouncementService {
 
       // Update in Firebase directly
       const docRef = doc(db, 'comments', updateData.id);
-      await updateDoc(docRef, {
+      
+      // Create the update object
+      const updateObj: any = {
         content: updateData.content.trim(),
-        mentions: updateData.mentions,
         isEdited: true,
         editedAt: serverTimestamp(),
         updatedAt: serverTimestamp()
-      });
+      };
+      
+      // Only add mentions if they exist and are not empty
+      if (updateData.mentions && updateData.mentions.length > 0) {
+        updateObj.mentions = updateData.mentions;
+      } else {
+        // If mentions field exists but should be removed, set to empty array
+        // This is how we "delete" an existing field in Firestore updates
+        updateObj.mentions = [];
+      }
+      
+      await updateDoc(docRef, updateObj);
 
       // Get the updated comment
       const commentsQuery = query(

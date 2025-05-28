@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Pin, PinOff, Plus, RefreshCw } from 'lucide-react';
-import { AnnouncementService } from '@/lib/api/announcement';
+import { AnnouncementService, CreateCommentRequest, UpdateCommentRequest } from '@/lib/api/announcement';
 import { useToast } from '@/components/ui/use-toast';
 import { AnnouncementManagerProps, Announcement, AnnouncementComment } from '../types';
 import { AnnouncementCard } from './announcement-card';
@@ -243,19 +243,25 @@ export function AnnouncementManager({
     // Handle add comment - Real-time updates will handle UI updates automatically
     const handleAddComment = async (announcementId: string, comment: string, mentions?: string[], parentCommentId?: string) => {
         try {
-            await AnnouncementService.createComment({
+            // Create the comment request object
+            const commentRequest: CreateCommentRequest = {
                 content: comment,
                 authorId: userData.id,
-                announcementId,
-                parentCommentId,
-                mentions
-            });
+                announcementId
+            };
+            
+            // Only add parentCommentId if it exists
+            if (parentCommentId) {
+                commentRequest.parentCommentId = parentCommentId;
+            }
+            
+            // Only add mentions if they exist and are not empty
+            if (mentions && mentions.length > 0) {
+                commentRequest.mentions = mentions;
+            }
 
-            // No need to manually update state here - real-time subscription will handle it
-            toast({
-                title: 'Thành công',
-                description: 'Bình luận đã được thêm',
-            });
+            // Create the comment
+            await AnnouncementService.createComment(commentRequest);
         } catch (error: any) {
             toast({
                 variant: 'destructive',
@@ -268,17 +274,19 @@ export function AnnouncementManager({
     // Handle update comment - Real-time updates will handle UI updates automatically
     const handleUpdateComment = async (commentId: string, content: string, mentions?: string[]) => {
         try {
-            await AnnouncementService.updateComment({
+            // Create the update request object
+            const updateRequest: UpdateCommentRequest = {
                 id: commentId,
-                content,
-                mentions
-            });
+                content
+            };
+            
+            // Only add mentions if they exist and are not empty
+            if (mentions && mentions.length > 0) {
+                updateRequest.mentions = mentions;
+            }
 
-            // No need to manually update state here - real-time subscription will handle it
-            toast({
-                title: 'Thành công',
-                description: 'Bình luận đã được cập nhật',
-            });
+            // Update the comment
+            await AnnouncementService.updateComment(updateRequest);
         } catch (error: any) {
             toast({
                 variant: 'destructive',

@@ -15,12 +15,12 @@ const getNextClassStatus = (nextClass: string) => {
 
 function ClassDetailHeaderComponent({ classDetail }: ClassDetailHeaderProps) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-      <div className="space-y-1">
-        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">{classDetail.name}</h2>
-        <p className="text-muted-foreground">{classDetail.description}</p>
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+      <div className="space-y-0.5 sm:space-y-1 max-w-full sm:max-w-[70%]">
+        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight line-clamp-2">{classDetail.name}</h2>
+        <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">{classDetail.description}</p>
       </div>
-      <Badge variant="outline" className={getNextClassStatus(classDetail.nextClass).color}>
+      <Badge variant="outline" className={`${getNextClassStatus(classDetail.nextClass).color} whitespace-nowrap mt-1 sm:mt-0 text-xs sm:text-sm`}>
         {getNextClassStatus(classDetail.nextClass).text}
       </Badge>
     </div>

@@ -586,7 +586,7 @@ export default function ClassDetailPage() {
         resourceId={classId}
       >
         <AnimatedPageWrapper>
-          <div className="container mx-auto py-6 space-y-6">
+          <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6 max-w-full md:max-w-7xl">
             <ClassDetailHeader 
               classDetail={classDetail}
             />
@@ -605,7 +605,7 @@ export default function ClassDetailPage() {
                 isMeetingActive={isMeetingActive} 
               />
               
-              <CustomTabsContent value="announcements" className="pt-6" transitionType="fade">
+              <CustomTabsContent value="announcements" className="pt-3 sm:pt-6" transitionType="fade">
                 <AnnouncementsTab 
                   classDetail={classDetail}
                   role={role}
@@ -615,7 +615,7 @@ export default function ClassDetailPage() {
                 />
               </CustomTabsContent>
               
-              <CustomTabsContent value="assignments" className="pt-6 space-y-4" transitionType="slide">
+              <CustomTabsContent value="assignments" className="pt-3 sm:pt-6 space-y-3 sm:space-y-4" transitionType="slide">
                 <AssignmentsTab 
                   classDetail={classDetail}
                   role={role}
@@ -624,7 +624,7 @@ export default function ClassDetailPage() {
                 />
               </CustomTabsContent>
               
-              <CustomTabsContent value="meeting" className="pt-6" transitionType="scale">
+              <CustomTabsContent value="meeting" className="pt-3 sm:pt-6" transitionType="scale">
                 <OnlineMeetingTab 
                   classDetail={classDetail}
                   role={role}
@@ -635,7 +635,7 @@ export default function ClassDetailPage() {
                 />
               </CustomTabsContent>
               
-              <CustomTabsContent value="schedule" className="pt-6" transitionType="slide">
+              <CustomTabsContent value="schedule" className="pt-3 sm:pt-6" transitionType="slide">
                 <ScheduleTab 
                   classSchedules={classSchedules}
                   isLoading={isLoadingSchedules}
@@ -645,7 +645,7 @@ export default function ClassDetailPage() {
                 />
               </CustomTabsContent>
               
-              <CustomTabsContent value="materials" className="pt-6" transitionType="slide">
+              <CustomTabsContent value="materials" className="pt-3 sm:pt-6" transitionType="slide">
                 <MaterialsTab 
                   classDetail={classDetail}
                   role={role}
@@ -653,7 +653,7 @@ export default function ClassDetailPage() {
                 />
               </CustomTabsContent>
               
-              <CustomTabsContent value="students" className="pt-6" transitionType="fade">
+              <CustomTabsContent value="students" className="pt-3 sm:pt-6" transitionType="fade">
                 <StudentsTab 
                   classDetail={classDetail}
                   role={role}
@@ -661,15 +661,13 @@ export default function ClassDetailPage() {
                 />
               </CustomTabsContent>
             
-              {role === 'Teacher' && (
-                <CustomTabsContent value="settings" className="pt-6" transitionType="slideUp">
-                  <SettingsTab 
-                    classDetail={classDetail}
-                    openEditClassModal={openEditClassModal}
-                    role={role}
-                  />
-                </CustomTabsContent>
-              )}
+              <CustomTabsContent value="settings" className="pt-3 sm:pt-6" transitionType="slideUp">
+                <SettingsTab 
+                  classDetail={classDetail}
+                  openEditClassModal={openEditClassModal}
+                  role={role}
+                />
+              </CustomTabsContent>
             </Tabs>
             
             <AddStudentModal

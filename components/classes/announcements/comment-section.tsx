@@ -121,8 +121,9 @@ export function CommentSection({
 
   const handleSubmit = () => {
     if (commentText.trim()) {
-      const mentions = mentionedUsers.map(user => user.id);
-      onAddComment(announcementId, commentText.trim(), mentions.length > 0 ? mentions : undefined);
+      // Only pass mentions array if it's not empty
+      const mentionsArray = mentionedUsers.length > 0 ? mentionedUsers.map(user => user.id) : null;
+      onAddComment(announcementId, commentText.trim(), mentionsArray || undefined);
       setCommentText('');
       setMentionedUsers([]);
       setIsActive(false);
@@ -131,7 +132,8 @@ export function CommentSection({
 
   const handleReply = (parentCommentId: string) => {
     if (replyText.trim()) {
-      const mentions = replyMentionedUsers.map(user => user.id);
+      // Only pass mentions array if it's not empty
+      const mentionsArray = replyMentionedUsers.length > 0 ? replyMentionedUsers.map(user => user.id) : null;
       
       // For our simplified system, always use the original parent ID
       // Find the original parent comment
@@ -142,7 +144,7 @@ export function CommentSection({
       onAddComment(
         announcementId, 
         replyText.trim(), 
-        mentions.length > 0 ? mentions : undefined,
+        mentionsArray || undefined,
         originalParentId // This ensures replies to child comments still go under the original parent
       );
       setReplyText('');
@@ -178,8 +180,9 @@ export function CommentSection({
 
   const handleSaveEdit = () => {
     if (editingCommentId && editingText.trim()) {
-      const mentions = editMentionedUsers.map(user => user.id);
-      onUpdateComment(editingCommentId, editingText.trim(), mentions.length > 0 ? mentions : undefined);
+      // Only pass mentions array if it's not empty
+      const mentionsArray = editMentionedUsers.length > 0 ? editMentionedUsers.map(user => user.id) : null;
+      onUpdateComment(editingCommentId, editingText.trim(), mentionsArray || undefined);
       setEditingCommentId(null);
       setEditingText('');
       setEditMentionedUsers([]);

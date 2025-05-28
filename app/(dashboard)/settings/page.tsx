@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { CheckIcon, LaptopIcon, MoonIcon, SaveIcon, SunIcon, RotateCcwIcon, SparklesIcon, KeyboardIcon, VolumeXIcon, Volume2Icon } from "lucide-react";
+import { CheckIcon, LaptopIcon, MoonIcon, SaveIcon, SunIcon, RotateCcwIcon, SparklesIcon, KeyboardIcon, VolumeXIcon, Volume2Icon, PaintbrushIcon } from "lucide-react";
 import { useTheme } from "next-themes";
 import { PageHeader } from "@/components/ui/page-header";
 import { Separator } from "@/components/ui/separator";
@@ -17,12 +17,12 @@ import { AuthGuard } from "@/components/auth/auth-guard";
 export default function SettingsPage() {
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
-  
+
   // Easter egg state
   const [systemClickCount, setSystemClickCount] = useState(0);
   const [isStarryNight, setIsStarryNight] = useState(false);
   const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   // User preferences state
   const [fontSize, setFontSize] = useState<string>("normal");
   const [highContrast, setHighContrast] = useState<boolean>(false);
@@ -31,15 +31,15 @@ export default function SettingsPage() {
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(true);
   const [colorblindMode, setColorblindMode] = useState<boolean>(false);
   const [soundEffects, setSoundEffects] = useState<boolean>(true);
-  
+
   // Enhanced UX states
   const [previewTheme, setPreviewTheme] = useState<string | null>(null);
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
-  
+
   // Play sound effect function
   const playSound = useCallback((type: 'click' | 'success' | 'easter' | 'switch') => {
     if (!soundEffects || !animationsEnabled) return;
-    
+
     // Create audio context for web audio (more reliable than HTML5 audio)
     try {
       // Type-safe way to access webkitAudioContext
@@ -47,10 +47,10 @@ export default function SettingsPage() {
       const audioContext = new AudioContextClass();
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
-      
+
       oscillator.connect(gainNode);
       gainNode.connect(audioContext.destination);
-      
+
       // Different sounds for different actions
       switch (type) {
         case 'click':
@@ -102,7 +102,7 @@ export default function SettingsPage() {
         document.documentElement.classList.remove("text-sm", "text-base", "text-lg");
         document.documentElement.classList.add(`text-${savedFontSize}`);
       }
-      
+
       // Load other preferences
       const savedHighContrast = localStorage.getItem("otls_high_contrast") === "true";
       const savedAnimations = localStorage.getItem("otls_animations_enabled") !== "false"; // Default to true
@@ -111,7 +111,7 @@ export default function SettingsPage() {
       const savedColorblindMode = localStorage.getItem("otls_colorblind_mode") === "true";
       const savedSoundEffects = localStorage.getItem("otls_sound_effects") !== "false"; // Default to true
       const savedStarryNight = localStorage.getItem("otls_starry_night") === "true";
-      
+
       setHighContrast(savedHighContrast);
       setAnimationsEnabled(savedAnimations);
       setAutoSave(savedAutoSave);
@@ -119,21 +119,21 @@ export default function SettingsPage() {
       setColorblindMode(savedColorblindMode);
       setSoundEffects(savedSoundEffects);
       setIsStarryNight(savedStarryNight);
-      
+
       // Apply high contrast if enabled
       if (savedHighContrast) {
         document.documentElement.classList.add("high-contrast");
       } else {
         document.documentElement.classList.remove("high-contrast");
       }
-      
+
       // Apply colorblind mode if enabled
       if (savedColorblindMode) {
         document.documentElement.classList.add("colorblind-mode");
       } else {
         document.documentElement.classList.remove("colorblind-mode");
       }
-      
+
       // Starry night is now handled globally by StarryNightProvider
     }
   }, []);
@@ -141,26 +141,26 @@ export default function SettingsPage() {
   // Easter egg: Handle system button clicks
   const handleSystemClick = () => {
     playSound('click');
-    
+
     // Clear existing timeout
     if (clickTimeoutRef.current) {
       clearTimeout(clickTimeoutRef.current);
     }
-    
+
     const newClickCount = systemClickCount + 1;
     setSystemClickCount(newClickCount);
-    
+
     // Reset counter after 3 seconds of no clicks
     clickTimeoutRef.current = setTimeout(() => {
       setSystemClickCount(0);
     }, 3000);
-    
+
     // Easter egg activation
     if (newClickCount === 8) {
       activateStarryNight();
       setSystemClickCount(0);
     }
-    
+
     // Regular system theme change
     handleThemeChange("system");
   };
@@ -169,12 +169,12 @@ export default function SettingsPage() {
   const activateStarryNight = () => {
     setIsStarryNight(true);
     localStorage.setItem("otls_starry_night", "true");
-    
+
     // Emit custom event to notify global provider
     window.dispatchEvent(new CustomEvent('starryNightToggle'));
-    
+
     playSound('easter');
-    
+
     // Add easter egg activation animation to the button
     const systemButton = document.querySelector('[data-theme="system"]');
     if (systemButton) {
@@ -183,7 +183,7 @@ export default function SettingsPage() {
         systemButton.classList.remove('easter-egg-activated');
       }, 1000);
     }
-    
+
     toast({
       title: "🌟 Bầu trời sao đã thống trị nơi này 🌟",
       description: "Tận hưởng màn đêm lung linh của mình nhé. Hãy nhớ rằng màn đêm chỉ có thể được tắt bằng nút tắt chế độ Starry Night. ✨",
@@ -195,21 +195,21 @@ export default function SettingsPage() {
   const deactivateStarryNight = () => {
     setIsStarryNight(false);
     localStorage.setItem("otls_starry_night", "false");
-    
+
     // Emit custom event to notify global provider
     window.dispatchEvent(new CustomEvent('starryNightToggle'));
-    
+
     toast({
       title: "Chế độ Starry Night đã tắt",
       description: "Trở lại chế độ bình thường",
     });
   };
-  
+
   // Handle font size change
   const handleFontSizeChange = (value: string) => {
     setFontSize(value);
     localStorage.setItem("otls_font_size", value);
-    
+
     // Apply font size to document
     document.documentElement.classList.remove("text-sm", "text-base", "text-lg");
     document.documentElement.classList.add(`text-${value}`);
@@ -217,7 +217,7 @@ export default function SettingsPage() {
     playSound('switch');
     window.location.reload();
   };
-  
+
   // Handle theme change
   const handleThemeChange = useCallback((value: string) => {
     setTheme(value);
@@ -232,84 +232,84 @@ export default function SettingsPage() {
   const clearThemePreview = () => {
     setPreviewTheme(null);
   };
-  
+
   // Handle high contrast change
   const handleHighContrastChange = (checked: boolean) => {
     setHighContrast(checked);
     localStorage.setItem("otls_high_contrast", checked.toString());
-    
+
     // Apply high contrast if enabled
     if (checked) {
       document.documentElement.classList.add("high-contrast");
     } else {
       document.documentElement.classList.remove("high-contrast");
     }
-    
+
     playSound('switch');
-    
+
     toast({
       title: checked ? "Đã bật chế độ tương phản cao" : "Đã tắt chế độ tương phản cao",
     });
   };
-  
+
   // Handle animations toggle
   const handleAnimationsChange = (checked: boolean) => {
     setAnimationsEnabled(checked);
     localStorage.setItem("otls_animations_enabled", checked.toString());
-    
+
     // Apply animation settings
     if (!checked) {
       document.documentElement.classList.add("reduce-motion");
     } else {
       document.documentElement.classList.remove("reduce-motion");
     }
-    
+
     playSound('switch');
-    
+
     toast({
       title: checked ? "Đã bật hiệu ứng chuyển động" : "Đã tắt hiệu ứng chuyển động",
     });
   };
-  
+
   // Handle auto save change
   const handleAutoSaveChange = (checked: boolean) => {
     setAutoSave(checked);
     localStorage.setItem("otls_auto_save", checked.toString());
-    
+
     playSound('switch');
-    
+
     toast({
       title: checked ? "Đã bật tự động lưu" : "Đã tắt tự động lưu",
       description: "Thiết lập này áp dụng cho các bài tập và bài kiểm tra.",
     });
   };
-  
+
   // Handle notifications change
   const handleNotificationsChange = (checked: boolean) => {
     setNotificationsEnabled(checked);
     localStorage.setItem("otls_notifications_enabled", checked.toString());
-    
+
     playSound('switch');
-    
+
     toast({
       title: checked ? "Đã bật thông báo" : "Đã tắt thông báo",
     });
   };
-  
+
   // Handle colorblind mode change
   const handleColorblindModeChange = (checked: boolean) => {
     setColorblindMode(checked);
     localStorage.setItem("otls_colorblind_mode", checked.toString());
-    
+
     // Apply colorblind mode if enabled
     if (checked) {
       document.documentElement.classList.add("colorblind-mode");
     } else {
       document.documentElement.classList.remove("colorblind-mode");
     }
-    
+
     playSound('switch');
-    
+
     toast({
       title: checked ? "Đã bật chế độ màu dành cho người khiếm thị màu" : "Đã tắt chế độ màu dành cho người khiếm thị màu",
     });
@@ -319,16 +319,16 @@ export default function SettingsPage() {
   const handleSoundEffectsChange = (checked: boolean) => {
     setSoundEffects(checked);
     localStorage.setItem("otls_sound_effects", checked.toString());
-    
+
     if (checked) {
       playSound('switch');
     }
-    
+
     toast({
       title: checked ? "Đã bật hiệu ứng âm thanh" : "Đã tắt hiệu ứng âm thanh",
     });
   };
-  
+
   // Save all settings
   const saveAllSettings = useCallback(() => {
     // Settings are saved individually as they change
@@ -338,7 +338,7 @@ export default function SettingsPage() {
       description: "Các cài đặt của bạn đã được lưu thành công.",
     });
   }, [playSound, toast]);
-  
+
   // Reset individual section
   const resetSection = (section: 'appearance' | 'accessibility' | 'preferences') => {
     switch (section) {
@@ -353,11 +353,11 @@ export default function SettingsPage() {
         setHighContrast(false);
         localStorage.setItem("otls_high_contrast", "false");
         document.documentElement.classList.remove("high-contrast");
-        
+
         setAnimationsEnabled(true);
         localStorage.setItem("otls_animations_enabled", "true");
         document.documentElement.classList.remove("reduce-motion");
-        
+
         setColorblindMode(false);
         localStorage.setItem("otls_colorblind_mode", "false");
         document.documentElement.classList.remove("colorblind-mode");
@@ -365,71 +365,71 @@ export default function SettingsPage() {
       case 'preferences':
         setAutoSave(true);
         localStorage.setItem("otls_auto_save", "true");
-        
+
         setNotificationsEnabled(true);
         localStorage.setItem("otls_notifications_enabled", "true");
-        
+
         setSoundEffects(true);
         localStorage.setItem("otls_sound_effects", "true");
         break;
     }
-    
+
     playSound('success');
     toast({
       title: `Đã khôi phục ${section === 'appearance' ? 'giao diện' : section === 'accessibility' ? 'trợ năng' : 'tùy chọn'} về mặc định`,
     });
   };
-  
+
   // Reset all settings to default
   const resetAllSettings = useCallback(() => {
     // Reset theme
     setTheme("system");
-    
+
     // Reset font size
     setFontSize("normal");
     localStorage.setItem("otls_font_size", "normal");
     document.documentElement.classList.remove("text-sm", "text-base", "text-lg");
     document.documentElement.classList.add("text-normal");
-    
+
     // Reset high contrast
     setHighContrast(false);
     localStorage.setItem("otls_high_contrast", "false");
     document.documentElement.classList.remove("high-contrast");
-    
+
     // Reset animations
     setAnimationsEnabled(true);
     localStorage.setItem("otls_animations_enabled", "true");
     document.documentElement.classList.remove("reduce-motion");
-    
+
     // Reset auto save
     setAutoSave(true);
     localStorage.setItem("otls_auto_save", "true");
-    
+
     // Reset notifications
     setNotificationsEnabled(true);
     localStorage.setItem("otls_notifications_enabled", "true");
-    
+
     // Reset colorblind mode
     setColorblindMode(false);
     localStorage.setItem("otls_colorblind_mode", "false");
     document.documentElement.classList.remove("colorblind-mode");
-    
+
     // Reset sound effects
     setSoundEffects(true);
     localStorage.setItem("otls_sound_effects", "true");
-    
+
     // Reset starry night
     setIsStarryNight(false);
     localStorage.setItem("otls_starry_night", "false");
-    
+
     // Emit custom event to notify global provider
     window.dispatchEvent(new CustomEvent('starryNightToggle'));
-    
+
     // Reset easter egg counter
     setSystemClickCount(0);
-    
+
     playSound('success');
-    
+
     toast({
       title: "Đã khôi phục cài đặt mặc định",
       description: "Tất cả cài đặt đã được đặt lại về giá trị mặc định.",
@@ -507,12 +507,52 @@ export default function SettingsPage() {
         )}
 
         <Tabs defaultValue="appearance" className="w-full">
-          <TabsList className="w-full md:w-auto grid grid-cols-2 md:grid-cols-3 gap-1">
-            <TabsTrigger value="appearance">Giao diện</TabsTrigger>
-            <TabsTrigger value="accessibility">Trợ năng</TabsTrigger>
-            <TabsTrigger value="preferences">Tùy chọn</TabsTrigger>
+          <TabsList className="w-full h-auto p-1 bg-muted rounded-lg">
+            {/* Mobile: Stacked layout */}
+            <div className="flex flex-col sm:hidden w-full gap-1">
+              <TabsTrigger
+                value="appearance"
+                className="w-full justify-start text-sm px-4 py-3 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+              >
+                Giao diện
+              </TabsTrigger>
+              <TabsTrigger
+                value="accessibility"
+                className="w-full justify-start text-sm px-4 py-3 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+              >
+                Trợ năng
+              </TabsTrigger>
+              <TabsTrigger
+                value="preferences"
+                className="w-full justify-start text-sm px-4 py-3 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+              >
+                Tùy chọn
+              </TabsTrigger>
+            </div>
+
+            {/* Desktop: Original grid layout */}
+            <div className="hidden sm:grid sm:grid-cols-3 sm:gap-1 sm:w-full">
+              <TabsTrigger
+                value="appearance"
+                className="text-sm px-3 h-10 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+              >
+                Giao diện
+              </TabsTrigger>
+              <TabsTrigger
+                value="accessibility"
+                className="text-sm px-3 h-10 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+              >
+                Trợ năng
+              </TabsTrigger>
+              <TabsTrigger
+                value="preferences"
+                className="text-sm px-3 h-10 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+              >
+                Tùy chọn
+              </TabsTrigger>
+            </div>
           </TabsList>
-          
+
           {/* Appearance tab */}
           <TabsContent value="appearance" className="space-y-4 mt-4">
             <Card className="settings-card">
@@ -524,9 +564,9 @@ export default function SettingsPage() {
                       Tùy chỉnh giao diện hiển thị của ứng dụng
                     </CardDescription>
                   </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => resetSection('appearance')}
                     className="shrink-0"
                   >
@@ -553,8 +593,8 @@ export default function SettingsPage() {
                     )}
                   </div>
                   <div className="grid grid-cols-3 gap-2">
-                    <Button 
-                      variant={theme === "light" ? "default" : "outline"} 
+                    <Button
+                      variant={theme === "light" ? "default" : "outline"}
                       className="justify-start theme-button transition-all duration-300 hover:scale-105"
                       onClick={() => handleThemeChange("light")}
                       onMouseEnter={() => handleThemePreview("light")}
@@ -565,8 +605,8 @@ export default function SettingsPage() {
                       Sáng
                       {theme === "light" && <CheckIcon className="ml-auto h-4 w-4" />}
                     </Button>
-                    <Button 
-                      variant={theme === "dark" ? "default" : "outline"} 
+                    <Button
+                      variant={theme === "dark" ? "default" : "outline"}
                       className="justify-start theme-button transition-all duration-300 hover:scale-105"
                       onClick={() => handleThemeChange("dark")}
                       onMouseEnter={() => handleThemePreview("dark")}
@@ -577,8 +617,8 @@ export default function SettingsPage() {
                       Tối
                       {theme === "dark" && <CheckIcon className="ml-auto h-4 w-4" />}
                     </Button>
-                    <Button 
-                      variant={theme === "system" ? "default" : "outline"} 
+                    <Button
+                      variant={theme === "system" ? "default" : "outline"}
                       className="justify-start theme-button transition-all duration-300 hover:scale-105 relative"
                       onClick={handleSystemClick}
                       onMouseEnter={() => handleThemePreview("system")}
@@ -595,13 +635,8 @@ export default function SettingsPage() {
                       )}
                     </Button>
                   </div>
-                  {/* {previewTheme && (
-                    <p className="text-xs text-muted-foreground">
-                      Preview: {previewTheme === "light" ? "Chế độ sáng" : previewTheme === "dark" ? "Chế độ tối" : "Theo hệ thống"}
-                    </p>
-                  )} */}
                 </div>
-                
+
                 {/* Font size */}
                 <div className="space-y-2">
                   <Label htmlFor="font-size">Cỡ chữ</Label>
@@ -613,7 +648,7 @@ export default function SettingsPage() {
                         className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary transition-all duration-200 hover:scale-105 cursor-pointer"
                       >
                         <span className="text-sm mb-1">Nhỏ</span>
-                        <span className="text-xs">A</span>
+                        <span className="text-sm">A</span>
                       </Label>
                     </div>
                     <div>
@@ -623,7 +658,7 @@ export default function SettingsPage() {
                         className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary transition-all duration-200 hover:scale-105 cursor-pointer"
                       >
                         <span className="text-sm mb-1">Vừa</span>
-                        <span className="text-sm">A</span>
+                        <span className="text-base">A</span>
                       </Label>
                     </div>
                     <div>
@@ -633,7 +668,7 @@ export default function SettingsPage() {
                         className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary transition-all duration-200 hover:scale-105 cursor-pointer"
                       >
                         <span className="text-sm mb-1">Lớn</span>
-                        <span className="text-base">A</span>
+                        <span className="text-xl">A</span>
                       </Label>
                     </div>
                   </RadioGroup>
@@ -641,7 +676,7 @@ export default function SettingsPage() {
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           {/* Accessibility tab */}
           <TabsContent value="accessibility" className="space-y-4 mt-4">
             <Card className="settings-card">
@@ -653,9 +688,9 @@ export default function SettingsPage() {
                       Điều chỉnh các tùy chọn giúp cải thiện khả năng tiếp cận
                     </CardDescription>
                   </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => resetSection('accessibility')}
                     className="shrink-0"
                   >
@@ -679,9 +714,9 @@ export default function SettingsPage() {
                     className="transition-all duration-200"
                   />
                 </div>
-                
+
                 <Separator />
-                
+
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label htmlFor="animations">Hiệu ứng chuyển động</Label>
@@ -696,9 +731,9 @@ export default function SettingsPage() {
                     className="transition-all duration-200"
                   />
                 </div>
-                
+
                 <Separator />
-                
+
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label htmlFor="colorblind-mode">Chế độ khiếm thị màu</Label>
@@ -716,7 +751,7 @@ export default function SettingsPage() {
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           {/* Preferences tab */}
           <TabsContent value="preferences" className="space-y-4 mt-4">
             <Card className="settings-card">
@@ -728,9 +763,9 @@ export default function SettingsPage() {
                       Tùy chỉnh trải nghiệm sử dụng
                     </CardDescription>
                   </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => resetSection('preferences')}
                     className="shrink-0"
                   >
@@ -754,9 +789,9 @@ export default function SettingsPage() {
                     className="transition-all duration-200"
                   />
                 </div>
-                
+
                 <Separator />
-                
+
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label htmlFor="sound-effects">Hiệu ứng âm thanh</Label>
@@ -771,9 +806,9 @@ export default function SettingsPage() {
                     className="transition-all duration-200"
                   />
                 </div>
-                
+
                 <Separator />
-                
+
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label htmlFor="notifications">Thông báo (chưa hoạt động)</Label>
@@ -787,9 +822,9 @@ export default function SettingsPage() {
                     disabled={true}
                   />
                 </div>
-                
+
                 <Separator />
-                
+
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label htmlFor="keyboard-shortcuts">Hiện phím tắt</Label>
@@ -819,6 +854,6 @@ export default function SettingsPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </AuthGuard>
+    </AuthGuard >
   );
 } 
