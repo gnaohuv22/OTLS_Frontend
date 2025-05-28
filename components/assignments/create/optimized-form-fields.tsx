@@ -143,10 +143,10 @@ export const CommonFields = memo(function CommonFields({
       setMaxPointsError('Điểm phải là số');
     } else if (points < 0) {
       setMaxPointsError('Điểm không thể âm');
-    } else if (points > 100) {
-      setMaxPointsError('Điểm tối đa là 100');
-      // Automatically set to 100 if exceeds
-      onMaxPointsChange('100');
+    } else if (points > 10) {
+      setMaxPointsError('Điểm tối đa là 10');
+      // Automatically set to 10 if exceeds
+      onMaxPointsChange('10');
       return;
     } else {
       setMaxPointsError('');
@@ -191,9 +191,8 @@ export const CommonFields = memo(function CommonFields({
       setTimerError('');
     }
     
-    // Update timer after validation
-    updateTimer();
-  }, [setTimerMinutes, updateTimer]);
+    // Removed automatic updateTimer call here to prevent infinite loop
+  }, [setTimerMinutes]);
   
   // Handle seconds change with validation
   const handleSecondsChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -218,14 +217,26 @@ export const CommonFields = memo(function CommonFields({
       setTimerError('');
     }
     
-    // Update timer after validation
-    updateTimer();
-  }, [setTimerSeconds, updateTimer]);
+    // Removed automatic updateTimer call here to prevent infinite loop
+  }, [setTimerSeconds]);
   
-  // Update timer whenever minutes or seconds change
+  // Use a more controlled approach for timer updates with a delayed effect
   useEffect(() => {
-    updateTimer();
-  }, [timerMinutes, timerSeconds, updateTimer]);
+    // Use a debounce technique to prevent too many updates
+    const timeoutId = setTimeout(() => {
+      const minutes = parseInt(timerMinutes, 10) || 0;
+      const seconds = parseInt(timerSeconds, 10) || 0;
+      
+      // Calculate total seconds
+      const totalSeconds = (minutes * 60) + seconds;
+      
+      // Convert to string or null if zero
+      const timerValue = totalSeconds > 0 ? totalSeconds.toString() : null;
+      onTimerChange(timerValue);
+    }, 300); // Debounce for 300ms
+    
+    return () => clearTimeout(timeoutId);
+  }, [timerMinutes, timerSeconds, onTimerChange]);
 
   // Tạo hiển thị lớp được chọn
   const selectedClassesDisplay = useMemo(() => {
@@ -477,7 +488,7 @@ export const CommonFields = memo(function CommonFields({
           id="maxPoints"
           type="number"
           min="0"
-          max="100"
+          max="10"
           value={maxPoints}
           onChange={(e) => handleMaxPointsChange(e.target.value)}
           className={cn(

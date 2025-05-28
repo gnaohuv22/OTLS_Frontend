@@ -26,20 +26,20 @@ export default function AssignmentsList() {
     const fetchAssignments = async () => {
       try {
         setIsLoading(true);
-        
+
         if (role === 'Student' && user?.userID) {
           // For students, first get their classrooms
           const classrooms = await ClassroomService.getClassroomsByStudentId(user.userID);
-          
+
           if (classrooms && classrooms.length > 0) {
             // Create an array to hold all assignments
             const allAssignments: Assignment[] = [];
-            
+
             // For each classroom, fetch its assignments
             for (const classroom of classrooms) {
               try {
                 const response = await getAssignmentsByClassId(classroom.classroomId);
-                
+
                 if (response.data && response.data.assignments) {
                   // Transform API response to match our Assignment type
                   const classAssignments: Assignment[] = response.data.assignments.map((item) => ({
@@ -55,16 +55,16 @@ export default function AssignmentsList() {
                     submissionStatus: "not_submitted", // Default submission status
                     maxPoints: item.maxPoints || 100, // Add maximum points
                   }));
-                  
+
                   allAssignments.push(...classAssignments);
                 }
               } catch (error) {
                 console.error(`Error fetching assignments for classroom ${classroom.classroomId}:`, error);
               }
             }
-            
+
             setAssignments(allAssignments);
-            
+
             // Fetch student's submissions to update assignment status
             fetchUserSubmissions(user.userID, allAssignments);
           } else {
@@ -74,7 +74,7 @@ export default function AssignmentsList() {
         } else {
           // For teachers and other roles, use the original implementation
           const response = await getAllAssignments();
-          
+
           if (response.data) {
             // Transform API response to match our Assignment type
             const transformedAssignments: Assignment[] = response.data.map((item) => ({
@@ -90,28 +90,23 @@ export default function AssignmentsList() {
               submissionStatus: "not_submitted", // Default submission status
               maxPoints: item.maxPoints || 100, // Add maximum points
             }));
-            
+
             setAssignments(transformedAssignments);
-            
+
             // For students, fetch their submissions
             if (role === 'Student' && user?.userID) {
               fetchUserSubmissions(user.userID, transformedAssignments);
             }
-          } else {
-            toast({
-              variant: "destructive",
-              title: "Lỗi",
-              description: "Không thể tải danh sách bài tập.",
-            });
           }
         }
-      } catch (error) {
-        console.error("Error fetching assignments:", error);
-        toast({
-          variant: "destructive",
-          title: "Lỗi",
-          description: "Không thể tải danh sách bài tập.",
-        });
+      } catch (error: any) {
+        if (error.response && error.response.status !== 404) {
+          toast({
+            variant: "destructive",
+            title: "Lỗi",
+            description: "Không thể tải danh sách bài tập.",
+          });
+        }
       } finally {
         setIsLoading(false);
       }
@@ -119,19 +114,19 @@ export default function AssignmentsList() {
 
     fetchAssignments();
   }, [toast, role, user?.userID]);
-  
+
   // Fetch user submissions and update assignments with submission status
   const fetchUserSubmissions = async (userId: string, assignmentsList: Assignment[]) => {
     try {
       const response = await getSubmissionsByUserId(userId);
-      
+
       if (response.data && response.data.submissions) {
         // Create a map of assignmentId -> best submission data (highest grade)
         const submissionMap: Record<string, any> = {};
-        
+
         response.data.submissions.forEach((submission: any) => {
           const assignmentId = submission.assignmentId;
-          
+
           // If no existing submission for this assignment or current submission has higher grade
           if (!submissionMap[assignmentId] || submission.grade > submissionMap[assignmentId].grade) {
             submissionMap[assignmentId] = {
@@ -142,20 +137,20 @@ export default function AssignmentsList() {
             };
           }
         });
-        
+
         setUserSubmissions(submissionMap);
-        
+
         // Update assignments with submission status and grades
         const updatedAssignments = assignmentsList.map(assignment => {
           // If the assignment has a submission, update its status accordingly
           if (submissionMap[assignment.id]) {
             const submissionData = submissionMap[assignment.id];
             const submissionStatus = submissionData.status.toLowerCase();
-            
+
             // Determine the assignment status based on submission status
             let assignmentStatus: "assigned" | "completed" | "graded" | "overdue";
             let typedSubmissionStatus: "submitted" | "graded" | "late";
-            
+
             if (submissionStatus === 'graded') {
               assignmentStatus = 'graded';
               typedSubmissionStatus = 'graded';
@@ -170,7 +165,7 @@ export default function AssignmentsList() {
               assignmentStatus = 'assigned';
               typedSubmissionStatus = 'submitted'; // Default to submitted if unknown
             }
-            
+
             return {
               ...assignment,
               submissionStatus: typedSubmissionStatus,
@@ -178,7 +173,7 @@ export default function AssignmentsList() {
               grade: submissionData.grade,
             };
           }
-          
+
           // If no submission, check if assignment is overdue
           const now = new Date();
           const dueDate = new Date(assignment.dueDate);
@@ -189,7 +184,7 @@ export default function AssignmentsList() {
               submissionStatus: 'not_submitted' as const
             };
           }
-          
+
           // Otherwise, it's an assigned assignment with no submission
           return {
             ...assignment,
@@ -197,7 +192,7 @@ export default function AssignmentsList() {
             submissionStatus: 'not_submitted' as const
           };
         });
-        
+
         setAssignments(updatedAssignments);
       }
     } catch (error) {
@@ -211,12 +206,12 @@ export default function AssignmentsList() {
     if (searchTerm && !assignment.title.toLowerCase().includes(searchTerm.toLowerCase())) {
       return false;
     }
-    
+
     // Lọc theo môn học
     if (filterSubject && assignment.subject !== filterSubject) {
       return false;
     }
-    
+
     return true;
   });
 
@@ -225,7 +220,7 @@ export default function AssignmentsList() {
 
   return (
     <AuthGuard>
-      <motion.div 
+      <motion.div
         initial="hidden"
         animate="show"
         variants={fadeInUp}
@@ -233,7 +228,7 @@ export default function AssignmentsList() {
       >
         <AssignmentHeader role={role} />
 
-        <SearchAndFilterBar 
+        <SearchAndFilterBar
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
           filterSubject={filterSubject}
@@ -241,7 +236,7 @@ export default function AssignmentsList() {
           subjects={subjects}
         />
 
-        <AssignmentSections 
+        <AssignmentSections
           filteredAssignments={filteredAssignments}
           searchTerm={searchTerm}
           role={role}

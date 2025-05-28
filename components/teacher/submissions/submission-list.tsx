@@ -147,14 +147,12 @@ export function SubmissionList({
         setSubmissions([]);
       }
     } catch (error: any) {
-      if (error.status === 404) {
-        setSubmissions([]);
-      } else {
-        toast({
-          variant: "destructive",
-        title: "Lỗi",
-          description: "Không thể tải danh sách bài nộp. Vui lòng thử lại sau.",
-        });
+      if (error.status !== 404) {
+        // toast({
+        //   variant: "destructive",
+        // title: "Lỗi",
+        //   description: "Không thể tải danh sách bài nộp. Vui lòng thử lại sau.",
+        // });
       }
     } finally {
       setIsLoading(false);
