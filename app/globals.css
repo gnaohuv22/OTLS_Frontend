@@ -254,6 +254,215 @@
     }
   }
 
+  /* 🌆 DUSK THEME */
+  .dusk {
+    --background: 242 30% 15%;
+    --foreground: 40 30% 88%;
+    --card: 242 30% 18%;
+    --card-foreground: 40 30% 88%;
+    --popover: 242 30% 18%;
+    --popover-foreground: 40 30% 88%;
+    --primary: 275 70% 65%;
+    --primary-foreground: 242 30% 15%;
+    --secondary: 242 20% 25%;
+    --secondary-foreground: 40 30% 88%;
+    --muted: 242 20% 22%;
+    --muted-foreground: 40 15% 65%;
+    --accent: 275 40% 30%;
+    --accent-foreground: 40 30% 88%;
+    --destructive: 0 75% 55%;
+    --destructive-foreground: 40 30% 88%;
+    --border: 242 20% 28%;
+    --input: 242 20% 22%;
+    --ring: 275 70% 65%;
+  }
+
+  /* 🌆 DUSK GLOW EFFECTS */
+  .dusk::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(180deg, rgba(147, 112, 219, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  /* 💫 CYBERPUNK NEON THEME */
+  .cyberpunk-neon {
+    --background: 240 100% 3%;
+    --foreground: 180 100% 90%;
+    --card: 240 100% 5%;
+    --card-foreground: 180 100% 90%;
+    --popover: 240 100% 5%;
+    --popover-foreground: 180 100% 90%;
+    --primary: 315 100% 60%;
+    --primary-foreground: 240 100% 3%;
+    --secondary: 180 100% 15%;
+    --secondary-foreground: 180 100% 90%;
+    --muted: 240 50% 8%;
+    --muted-foreground: 180 50% 70%;
+    --accent: 60 100% 50%;
+    --accent-foreground: 240 100% 3%;
+    --destructive: 0 100% 60%;
+    --destructive-foreground: 180 100% 90%;
+    --border: 180 100% 25%;
+    --input: 240 50% 8%;
+    --ring: 315 100% 60%;
+  }
+
+  /* 💫 CYBERPUNK NEON GLOW EFFECTS */
+  .cyberpunk-neon::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+      radial-gradient(circle at 20% 20%, rgba(255, 0, 255, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(0, 255, 255, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: -1;
+    animation: neonPulse 4s ease-in-out infinite alternate;
+  }
+
+  @keyframes neonPulse {
+    0% { opacity: 0.5; }
+    100% { opacity: 0.8; }
+  }
+
+  /* ❄️ MINIMAL GLACIER THEME */
+  .minimal-glacier {
+    --background: 189 45% 98%;
+    --foreground: 189 40% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 189 40% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 189 40% 15%;
+    --primary: 189 65% 75%;
+    --primary-foreground: 189 40% 15%;
+    --secondary: 189 25% 92%;
+    --secondary-foreground: 189 40% 15%;
+    --muted: 189 25% 90%;
+    --muted-foreground: 189 25% 40%;
+    --accent: 189 25% 92%;
+    --accent-foreground: 189 40% 15%;
+    --destructive: 0 75% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 189 25% 85%;
+    --input: 189 25% 90%;
+    --ring: 189 65% 75%;
+  }
+
+  /* ❄️ MINIMAL GLACIER SUBTLE EFFECTS */
+  .minimal-glacier::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+      radial-gradient(circle at 50% 0%, rgba(163, 231, 240, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  /* 🌲 FOREST ZEN THEME */
+  .forest-zen {
+    --background: 134 25% 25%;
+    --foreground: 134 25% 85%;
+    --card: 134 25% 28%;
+    --card-foreground: 134 25% 85%;
+    --popover: 134 25% 28%;
+    --popover-foreground: 134 25% 85%;
+    --primary: 134 35% 55%;
+    --primary-foreground: 134 25% 15%;
+    --secondary: 134 25% 35%;
+    --secondary-foreground: 134 25% 85%;
+    --muted: 134 25% 32%;
+    --muted-foreground: 134 25% 65%;
+    --accent: 134 35% 45%;
+    --accent-foreground: 134 25% 85%;
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 134 25% 85%;
+    --border: 134 25% 40%;
+    --input: 134 25% 32%;
+    --ring: 134 35% 55%;
+  }
+
+  /* 🌲 FOREST ZEN NATURE EFFECTS */
+  .forest-zen::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+      linear-gradient(180deg, rgba(163, 177, 138, 0.1) 0%, rgba(88, 129, 87, 0.1) 100%);
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  /* 👨‍💻 MONO CODE THEME */
+  .mono-code {
+    --background: 0 0% 12%;
+    --foreground: 0 0% 80%;
+    --card: 0 0% 15%;
+    --card-foreground: 0 0% 80%;
+    --popover: 0 0% 15%;
+    --popover-foreground: 0 0% 80%;
+    --primary: 158 100% 56%;
+    --primary-foreground: 0 0% 12%;
+    --secondary: 0 0% 20%;
+    --secondary-foreground: 0 0% 80%;
+    --muted: 0 0% 18%;
+    --muted-foreground: 0 0% 60%;
+    --accent: 0 0% 20%;
+    --accent-foreground: 0 0% 80%;
+    --destructive: 0 85% 60%;
+    --destructive-foreground: 0 0% 80%;
+    --border: 0 0% 25%;
+    --input: 0 0% 18%;
+    --ring: 158 100% 56%;
+  }
+
+  /* 👨‍💻 MONO CODE FONT OVERRIDE - Only apply when mono-code is active */
+  .mono-code,
+  .mono-code * {
+    font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', 'Courier New', monospace !important;
+  }
+
+  /* 👨‍💻 MONO CODE TERMINAL EFFECTS */
+  .mono-code::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+      repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 255, 136, 0.03) 2px,
+        rgba(0, 255, 136, 0.03) 4px
+      );
+    pointer-events: none;
+    z-index: -1;
+    animation: scanlines 1s linear infinite;
+  }
+
+  @keyframes scanlines {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(4px); }
+  }
+
   * {
     @apply border-border;
   }

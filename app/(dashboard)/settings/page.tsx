@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -8,15 +8,81 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { CheckIcon, LaptopIcon, MoonIcon, SaveIcon, SunIcon, RotateCcwIcon, SparklesIcon, KeyboardIcon, VolumeXIcon, Volume2Icon, PaintbrushIcon } from "lucide-react";
+import { CheckIcon, LaptopIcon, MoonIcon, SaveIcon, SunIcon, RotateCcwIcon, SparklesIcon, KeyboardIcon, VolumeXIcon, Volume2Icon, PaintbrushIcon, TreesIcon, CodeIcon, MountainIcon, ZapIcon, SunsetIcon, LockIcon } from "lucide-react";
 import { useTheme } from "next-themes";
 import { PageHeader } from "@/components/ui/page-header";
 import { Separator } from "@/components/ui/separator";
 import { AuthGuard } from "@/components/auth/auth-guard";
 
+// Theme definitions with metadata
+const THEMES = [
+  {
+    value: "light",
+    name: "Sáng",
+    description: "Giao diện sáng cổ điển",
+    icon: SunIcon,
+    className: "bg-white border-gray-200 text-gray-900",
+    preview: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)"
+  },
+  {
+    value: "dark", 
+    name: "Tối",
+    description: "Giao diện tối dễ nhìn",
+    icon: MoonIcon,
+    className: "bg-gray-900 border-gray-700 text-gray-100",
+    preview: "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)"
+  },
+  {
+    value: "dusk",
+    name: "Hoàng hôn",
+    description: "Ánh hoàng hôn ấm áp",
+    icon: SunsetIcon,
+    className: "bg-purple-900 border-purple-700 text-purple-100",
+    preview: "linear-gradient(135deg, #581c87 0%, #7c2d12 100%)"
+  },
+  {
+    value: "cyberpunk-neon",
+    name: "Cyberpunk Neon",
+    description: "Tương lai rực rỡ",
+    icon: ZapIcon,
+    className: "bg-blue-950 border-cyan-500 text-cyan-100",
+    preview: "linear-gradient(135deg, #030712 0%, #1e1b4b 50%, #581c87 100%)"
+  },
+  {
+    value: "minimal-glacier",
+    name: "Băng tuyết",
+    description: "Tối giản như băng tuyết",
+    icon: MountainIcon,
+    className: "bg-blue-50 border-blue-200 text-blue-900",
+    preview: "linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)"
+  },
+  {
+    value: "forest-zen",
+    name: "Rừng thiền",
+    description: "Yên bình như rừng xanh",
+    icon: TreesIcon,
+    className: "bg-green-800 border-green-600 text-green-100",
+    preview: "linear-gradient(135deg, #365314 0%, #166534 100%)"
+  },
+  {
+    value: "mono-code",
+    name: "Mono Code",
+    description: "Terminal cho dev",
+    icon: CodeIcon,
+    className: "bg-gray-900 border-green-400 text-green-400 font-mono",
+    preview: "linear-gradient(135deg, #1e1e1e 0%, #0d1117 100%)"
+  }
+];
+
 export default function SettingsPage() {
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
+
+  // Konami code state for Starry Night unlock
+  const [konamiSequence, setKonamiSequence] = useState<string[]>([]);
+  const [isStarryNightUnlocked, setIsStarryNightUnlocked] = useState(false);
+  const [showKonamiHint, setShowKonamiHint] = useState(false);
+  const konamiCode = useMemo(() => ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyB', 'KeyA'], []);
 
   // Easter egg state
   const [systemClickCount, setSystemClickCount] = useState(0);
@@ -37,7 +103,7 @@ export default function SettingsPage() {
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
 
   // Play sound effect function
-  const playSound = useCallback((type: 'click' | 'success' | 'easter' | 'switch') => {
+  const playSound = useCallback((type: 'click' | 'success' | 'easter' | 'switch' | 'konami' | 'unlock') => {
     if (!soundEffects || !animationsEnabled) return;
 
     // Create audio context for web audio (more reliable than HTML5 audio)
@@ -84,6 +150,25 @@ export default function SettingsPage() {
           oscillator.start();
           oscillator.stop(audioContext.currentTime + 0.1);
           break;
+        case 'konami':
+          // Konami code beep
+          oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
+          gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+          oscillator.start();
+          oscillator.stop(audioContext.currentTime + 0.1);
+          break;
+        case 'unlock':
+          // Unlock success sound - more elaborate
+          oscillator.type = 'sine';
+          oscillator.frequency.setValueAtTime(261.63, audioContext.currentTime); // C4
+          oscillator.frequency.setValueAtTime(329.63, audioContext.currentTime + 0.1); // E4
+          oscillator.frequency.setValueAtTime(392.00, audioContext.currentTime + 0.2); // G4
+          oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime + 0.3); // C5
+          gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.6);
+          oscillator.start();
+          oscillator.stop(audioContext.currentTime + 0.6);
+          break;
       }
     } catch (error) {
       // Fallback: silent operation if audio context fails
@@ -111,6 +196,7 @@ export default function SettingsPage() {
       const savedColorblindMode = localStorage.getItem("otls_colorblind_mode") === "true";
       const savedSoundEffects = localStorage.getItem("otls_sound_effects") !== "false"; // Default to true
       const savedStarryNight = localStorage.getItem("otls_starry_night") === "true";
+      const savedStarryNightUnlocked = localStorage.getItem("otls_starry_night_unlocked") === "true";
 
       setHighContrast(savedHighContrast);
       setAnimationsEnabled(savedAnimations);
@@ -119,6 +205,7 @@ export default function SettingsPage() {
       setColorblindMode(savedColorblindMode);
       setSoundEffects(savedSoundEffects);
       setIsStarryNight(savedStarryNight);
+      setIsStarryNightUnlocked(savedStarryNightUnlocked);
 
       // Apply high contrast if enabled
       if (savedHighContrast) {
@@ -138,35 +225,89 @@ export default function SettingsPage() {
     }
   }, []);
 
-  // Easter egg: Handle system button clicks
-  const handleSystemClick = () => {
-    playSound('click');
+  // Function to remove all theme classes from document
+  const removeAllThemeClasses = useCallback(() => {
+    const themeClasses = [
+      'light', 'dark', 'dusk', 'cyberpunk-neon', 'minimal-glacier', 
+      'forest-zen', 'mono-code', 'starry-night'
+    ];
+    
+    themeClasses.forEach(themeClass => {
+      document.documentElement.classList.remove(themeClass);
+    });
+  }, []);
 
-    // Clear existing timeout
-    if (clickTimeoutRef.current) {
-      clearTimeout(clickTimeoutRef.current);
+  // Function to apply theme class to document
+  const applyThemeClass = useCallback((themeValue: string) => {
+    // Remove all existing theme classes first
+    removeAllThemeClasses();
+    
+    // Add the new theme class
+    if (themeValue !== 'system') {
+      document.documentElement.classList.add(themeValue);
     }
+  }, [removeAllThemeClasses]);
 
-    const newClickCount = systemClickCount + 1;
-    setSystemClickCount(newClickCount);
+  // Unlock Starry Night theme
+  const unlockStarryNight = useCallback(() => {
+    setIsStarryNightUnlocked(true);
+    localStorage.setItem("otls_starry_night_unlocked", "true");
+    
+    playSound('unlock');
 
-    // Reset counter after 3 seconds of no clicks
-    clickTimeoutRef.current = setTimeout(() => {
-      setSystemClickCount(0);
-    }, 3000);
+    toast({
+      title: "🌟 Chúc mừng! Starry Night đã được mở khóa! 🌟",
+      description: "Bạn đã nhập đúng Konami Code! Giờ đây bạn có thể sử dụng theme bí mật Starry Night. ✨",
+      duration: 6000,
+    });
+  }, [playSound, toast]);
 
-    // Easter egg activation
-    if (newClickCount === 8) {
-      activateStarryNight();
-      setSystemClickCount(0);
-    }
+  // Konami code listener
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (isStarryNightUnlocked) return; // Already unlocked
 
-    // Regular system theme change
-    handleThemeChange("system");
-  };
+      setKonamiSequence(prev => {
+        const newSequence = [...prev, event.code];
+        
+        // Check if current sequence matches the beginning of konami code
+        const isValidSequence = konamiCode.slice(0, newSequence.length).every((key, index) => key === newSequence[index]);
+        
+        if (!isValidSequence) {
+          // Reset if sequence is wrong
+          return [];
+        }
+
+        // Play feedback sound for correct key
+        playSound('konami');
+
+        // Check if complete sequence is entered
+        if (newSequence.length === konamiCode.length) {
+          // Use setTimeout to avoid updating during render
+          setTimeout(() => {
+            unlockStarryNight();
+          }, 0);
+          return [];
+        }
+
+        // Show hint after 5 correct keys
+        if (newSequence.length === 5) {
+          setShowKonamiHint(true);
+          setTimeout(() => setShowKonamiHint(false), 3000);
+        }
+
+        return newSequence;
+      });
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isStarryNightUnlocked, playSound, konamiCode, unlockStarryNight]);
 
   // Activate starry night easter egg
-  const activateStarryNight = () => {
+  const activateStarryNight = useCallback(() => {
+    setTheme("starry-night");
+    applyThemeClass("starry-night");
     setIsStarryNight(true);
     localStorage.setItem("otls_starry_night", "true");
 
@@ -175,35 +316,30 @@ export default function SettingsPage() {
 
     playSound('easter');
 
-    // Add easter egg activation animation to the button
-    const systemButton = document.querySelector('[data-theme="system"]');
-    if (systemButton) {
-      systemButton.classList.add('easter-egg-activated');
-      setTimeout(() => {
-        systemButton.classList.remove('easter-egg-activated');
-      }, 1000);
-    }
-
     toast({
       title: "🌟 Bầu trời sao đã thống trị nơi này 🌟",
-      description: "Tận hưởng màn đêm lung linh của mình nhé. Hãy nhớ rằng màn đêm chỉ có thể được tắt bằng nút tắt chế độ Starry Night. ✨",
+      description: "Tận hưởng màn đêm lung linh của mình nhé. ✨",
       duration: 5000,
     });
-  };
+  }, [setTheme, applyThemeClass, playSound, toast]);
 
   // Deactivate starry night
-  const deactivateStarryNight = () => {
+  const deactivateStarryNight = useCallback(() => {
     setIsStarryNight(false);
     localStorage.setItem("otls_starry_night", "false");
 
     // Emit custom event to notify global provider
     window.dispatchEvent(new CustomEvent('starryNightToggle'));
 
+    // Switch to dark theme when deactivating starry night
+    setTheme("dark");
+    applyThemeClass("dark");
+
     toast({
       title: "Chế độ Starry Night đã tắt",
       description: "Trở lại chế độ bình thường",
     });
-  };
+  }, [setTheme, applyThemeClass, toast]);
 
   // Handle font size change
   const handleFontSizeChange = (value: string) => {
@@ -220,9 +356,45 @@ export default function SettingsPage() {
 
   // Handle theme change
   const handleThemeChange = useCallback((value: string) => {
+    // Handle special starry night theme
+    if (value === "starry-night") {
+      activateStarryNight();
+      return;
+    }
+
+    // Deactivate starry night if switching to another theme
+    if (isStarryNight) {
+      setIsStarryNight(false);
+      localStorage.setItem("otls_starry_night", "false");
+      // Emit custom event to notify global provider
+      window.dispatchEvent(new CustomEvent('starryNightToggle'));
+    }
+
+    // Apply the new theme
     setTheme(value);
+    applyThemeClass(value);
     playSound('switch');
-  }, [playSound, setTheme]);
+  }, [playSound, setTheme, isStarryNight, activateStarryNight, applyThemeClass]);
+
+  // Effect to handle theme class application when theme changes
+  useEffect(() => {
+    if (theme && theme !== "starry-night") {
+      applyThemeClass(theme);
+    }
+  }, [theme, applyThemeClass]);
+
+  // Effect to handle initial theme setup
+  useEffect(() => {
+    if (typeof window !== "undefined" && theme) {
+      // Apply the current theme class on mount
+      if (isStarryNight) {
+        applyThemeClass("starry-night");
+      } else {
+        applyThemeClass(theme);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount - we want this to run once
 
   // Theme preview handlers
   const handleThemePreview = (themeValue: string) => {
@@ -343,7 +515,8 @@ export default function SettingsPage() {
   const resetSection = (section: 'appearance' | 'accessibility' | 'preferences') => {
     switch (section) {
       case 'appearance':
-        setTheme("system");
+        setTheme("light");
+        applyThemeClass("light");
         setFontSize("normal");
         localStorage.setItem("otls_font_size", "normal");
         document.documentElement.classList.remove("text-sm", "text-base", "text-lg");
@@ -383,7 +556,8 @@ export default function SettingsPage() {
   // Reset all settings to default
   const resetAllSettings = useCallback(() => {
     // Reset theme
-    setTheme("system");
+    setTheme("light");
+    applyThemeClass("light");
 
     // Reset font size
     setFontSize("normal");
@@ -434,7 +608,7 @@ export default function SettingsPage() {
       title: "Đã khôi phục cài đặt mặc định",
       description: "Tất cả cài đặt đã được đặt lại về giá trị mặc định.",
     });
-  }, [setTheme, setFontSize, setHighContrast, setAnimationsEnabled, setAutoSave, setNotificationsEnabled, setColorblindMode, setSoundEffects, setIsStarryNight, setSystemClickCount, playSound, toast]);
+  }, [setTheme, setFontSize, setHighContrast, setAnimationsEnabled, setAutoSave, setNotificationsEnabled, setColorblindMode, setSoundEffects, setIsStarryNight, setSystemClickCount, playSound, toast, applyThemeClass]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -451,7 +625,23 @@ export default function SettingsPage() {
             break;
           case '3':
             event.preventDefault();
-            handleThemeChange("system");
+            handleThemeChange("dusk");
+            break;
+          case '4':
+            event.preventDefault();
+            handleThemeChange("cyberpunk-neon");
+            break;
+          case '5':
+            event.preventDefault();
+            handleThemeChange("minimal-glacier");
+            break;
+          case '6':
+            event.preventDefault();
+            handleThemeChange("forest-zen");
+            break;
+          case '7':
+            event.preventDefault();
+            handleThemeChange("mono-code");
             break;
           case 'k':
             event.preventDefault();
@@ -481,6 +671,25 @@ export default function SettingsPage() {
           description="Tùy chỉnh giao diện và các thiết lập cá nhân"
         />
 
+        {/* Konami code hint for unlocking Starry Night */}
+        {!isStarryNightUnlocked && (
+          <Card className="border-dashed border-muted-foreground/30 bg-muted/20">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3 text-center">
+                <div className="flex-1">
+                  <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                    <LockIcon className="h-5 w-5" />
+                    <span className="text-sm font-medium">Theme bí mật đang chờ được mở khóa...</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Thử nhập một chuỗi phím huyền thoại để khám phá điều bất ngờ! 🎮
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Keyboard shortcuts help */}
         {showKeyboardShortcuts && (
           <Card className="border-primary/20 bg-primary/5">
@@ -492,16 +701,22 @@ export default function SettingsPage() {
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                <div><kbd className="px-2 py-1 bg-muted rounded text-xs">Ctrl+1</kbd> - Chế độ sáng</div>
-                <div><kbd className="px-2 py-1 bg-muted rounded text-xs">Ctrl+2</kbd> - Chế độ tối</div>
-                <div><kbd className="px-2 py-1 bg-muted rounded text-xs">Ctrl+3</kbd> - Theo hệ thống</div>
+                <div><kbd className="px-2 py-1 bg-muted rounded text-xs">Ctrl+1</kbd> - Theme Sáng</div>
+                <div><kbd className="px-2 py-1 bg-muted rounded text-xs">Ctrl+2</kbd> - Theme Tối</div>
+                <div><kbd className="px-2 py-1 bg-muted rounded text-xs">Ctrl+3</kbd> - Hoàng hôn</div>
+                <div><kbd className="px-2 py-1 bg-muted rounded text-xs">Ctrl+4</kbd> - Cyberpunk Neon</div>
+                <div><kbd className="px-2 py-1 bg-muted rounded text-xs">Ctrl+5</kbd> - Băng tuyết</div>
+                <div><kbd className="px-2 py-1 bg-muted rounded text-xs">Ctrl+6</kbd> - Rừng thiền</div>
+                <div><kbd className="px-2 py-1 bg-muted rounded text-xs">Ctrl+7</kbd> - Mono Code</div>
                 <div><kbd className="px-2 py-1 bg-muted rounded text-xs">Ctrl+K</kbd> - Hiện/ẩn phím tắt</div>
                 <div><kbd className="px-2 py-1 bg-muted rounded text-xs">Ctrl+S</kbd> - Lưu tất cả</div>
                 <div><kbd className="px-2 py-1 bg-muted rounded text-xs">Ctrl+R</kbd> - Reset tất cả</div>
               </div>
-              <p className="text-muted-foreground mt-2">
-                💡 <strong>Easter egg:</strong> Click "Hệ thống" 8 lần để mở khóa chế độ đặc biệt!
-              </p>
+              <div className="mt-4 p-3 bg-secondary/50 rounded-lg">
+                <p className="text-muted-foreground text-xs">
+                  🎮 <strong>Bí mật:</strong> Thử nhập Konami Code (↑↑↓↓←→←→BA) để mở khóa theme đặc biệt!
+                </p>
+              </div>
             </CardContent>
           </Card>
         )}
@@ -592,49 +807,106 @@ export default function SettingsPage() {
                       </Button>
                     )}
                   </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    <Button
-                      variant={theme === "light" ? "default" : "outline"}
-                      className="justify-start theme-button transition-all duration-300 hover:scale-105"
-                      onClick={() => handleThemeChange("light")}
-                      onMouseEnter={() => handleThemePreview("light")}
-                      onMouseLeave={clearThemePreview}
-                      data-theme="light"
-                    >
-                      <SunIcon className="mr-2 h-4 w-4" />
-                      Sáng
-                      {theme === "light" && <CheckIcon className="ml-auto h-4 w-4" />}
-                    </Button>
-                    <Button
-                      variant={theme === "dark" ? "default" : "outline"}
-                      className="justify-start theme-button transition-all duration-300 hover:scale-105"
-                      onClick={() => handleThemeChange("dark")}
-                      onMouseEnter={() => handleThemePreview("dark")}
-                      onMouseLeave={clearThemePreview}
-                      data-theme="dark"
-                    >
-                      <MoonIcon className="mr-2 h-4 w-4" />
-                      Tối
-                      {theme === "dark" && <CheckIcon className="ml-auto h-4 w-4" />}
-                    </Button>
-                    <Button
-                      variant={theme === "system" ? "default" : "outline"}
-                      className="justify-start theme-button transition-all duration-300 hover:scale-105 relative"
-                      onClick={handleSystemClick}
-                      onMouseEnter={() => handleThemePreview("system")}
-                      onMouseLeave={clearThemePreview}
-                      data-theme="system"
-                    >
-                      <LaptopIcon className="mr-2 h-4 w-4" />
-                      Hệ thống
-                      {theme === "system" && <CheckIcon className="ml-auto h-4 w-4" />}
-                      {systemClickCount > 0 && systemClickCount < 8 && (
-                        <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
-                          {systemClickCount}
-                        </span>
-                      )}
-                    </Button>
+
+                  {/* Main theme grid */}
+                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                    {THEMES.map((themeItem) => {
+                      const IconComponent = themeItem.icon;
+                      const isActive = theme === themeItem.value;
+                      
+                      return (
+                        <Button
+                          key={themeItem.value}
+                          variant={isActive ? "default" : "outline"}
+                          className="h-16 p-3 flex flex-col items-center justify-center theme-button transition-all duration-300 hover:scale-105 relative overflow-hidden"
+                          onClick={() => handleThemeChange(themeItem.value)}
+                          onMouseEnter={() => handleThemePreview(themeItem.value)}
+                          onMouseLeave={clearThemePreview}
+                          data-theme={themeItem.value}
+                          style={{
+                            background: previewTheme === themeItem.value ? themeItem.preview : undefined
+                          }}
+                        >
+                          <IconComponent className="h-5 w-5 mb-1" />
+                          <span className="text-xs font-medium text-center">{themeItem.name}</span>
+                          {isActive && (
+                            <CheckIcon className="absolute top-1 right-1 h-4 w-4" />
+                          )}
+                        </Button>
+                      );
+                    })}
                   </div>
+
+                  {/* Starry Night theme (unlockable) */}
+                  <div className="mt-6 pt-4 border-t">
+                    <div className="flex items-center justify-between mb-3">
+                      <Label className="text-sm font-medium">Chế độ đặc biệt</Label>
+                      {!isStarryNightUnlocked && (
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <LockIcon className="h-3 w-3" />
+                          Cần mở khóa
+                        </div>
+                      )}
+                    </div>
+                    
+                    {isStarryNightUnlocked ? (
+                      <Button
+                        variant={theme === "starry-night" ? "default" : "outline"}
+                        className="w-full h-16 p-3 flex flex-col items-center justify-center theme-button transition-all duration-300 hover:scale-105 relative overflow-hidden"
+                        onClick={() => handleThemeChange("starry-night")}
+                        onMouseEnter={() => handleThemePreview("starry-night")}
+                        onMouseLeave={clearThemePreview}
+                        data-theme="starry-night"
+                        style={{
+                          background: "linear-gradient(135deg, #1e1b4b 0%, #581c87 50%, #0c0a09 100%)",
+                          color: "#ffd700"
+                        }}
+                      >
+                        <SparklesIcon className="h-5 w-5 mb-1" />
+                        <span className="text-xs font-medium">✨ Starry Night ✨</span>
+                        {theme === "starry-night" && (
+                          <CheckIcon className="absolute top-1 right-1 h-4 w-4" />
+                        )}
+                      </Button>
+                    ) : (
+                      <div className="w-full h-16 p-3 flex flex-col items-center justify-center border-2 border-dashed border-muted-foreground/20 rounded-md bg-muted/10">
+                        <LockIcon className="h-5 w-5 mb-1 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">Theme bí mật</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Konami code hint */}
+                  {showKonamiHint && (
+                    <div className="mt-4 p-3 bg-primary/10 border border-primary/20 rounded-lg text-sm">
+                      <div className="flex items-center gap-2 text-primary">
+                        <KeyboardIcon className="h-4 w-4" />
+                        <span className="font-medium">Gần rồi!</span>
+                      </div>
+                      <p className="text-muted-foreground mt-1">
+                        Tiếp tục nhập sequence để mở khóa theme bí mật...
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Progress indicator for Konami code */}
+                  {konamiSequence.length > 0 && !isStarryNightUnlocked && (
+                    <div className="mt-4 p-2 bg-secondary rounded-lg">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <div className="flex gap-1">
+                          {konamiCode.map((_, index) => (
+                            <div
+                              key={index}
+                              className={`w-2 h-2 rounded-full ${
+                                index < konamiSequence.length ? 'bg-primary' : 'bg-muted-foreground/30'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <span>{konamiSequence.length}/{konamiCode.length}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Font size */}
@@ -685,7 +957,7 @@ export default function SettingsPage() {
                   <div>
                     <CardTitle>Tùy chọn trợ năng</CardTitle>
                     <CardDescription>
-                      Điều chỉnh các tùy chọn giúp cải thiện khả năng tiếp cận
+                      Điều chỉnh các tùy chọn giúp cải thiện khả năng tiếp cận. Điều chỉnh có thể không hoạt động đúng cách với một số tùy chọn giao diện.
                     </CardDescription>
                   </div>
                   <Button
