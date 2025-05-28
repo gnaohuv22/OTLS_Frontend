@@ -254,30 +254,30 @@
     }
   }
 
-  /* 🌆 DUSK THEME */
+  /* 🌆 DUSK THEME - SUNSET GRADIENT REDESIGN */
   .dusk {
-    --background: 242 30% 15%;
-    --foreground: 40 30% 88%;
-    --card: 242 30% 18%;
-    --card-foreground: 40 30% 88%;
-    --popover: 242 30% 18%;
-    --popover-foreground: 40 30% 88%;
-    --primary: 275 70% 65%;
-    --primary-foreground: 242 30% 15%;
-    --secondary: 242 20% 25%;
-    --secondary-foreground: 40 30% 88%;
-    --muted: 242 20% 22%;
-    --muted-foreground: 40 15% 65%;
-    --accent: 275 40% 30%;
-    --accent-foreground: 40 30% 88%;
+    --background: 25 35% 20%;
+    --foreground: 45 25% 88%;
+    --card: 25 35% 22%;
+    --card-foreground: 45 25% 88%;
+    --popover: 25 35% 22%;
+    --popover-foreground: 45 25% 88%;
+    --primary: 15 85% 65%;
+    --primary-foreground: 25 35% 15%;
+    --secondary: 25 25% 30%;
+    --secondary-foreground: 45 25% 88%;
+    --muted: 25 25% 28%;
+    --muted-foreground: 45 15% 70%;
+    --accent: 15 75% 55%;
+    --accent-foreground: 45 25% 88%;
     --destructive: 0 75% 55%;
-    --destructive-foreground: 40 30% 88%;
-    --border: 242 20% 28%;
-    --input: 242 20% 22%;
-    --ring: 275 70% 65%;
+    --destructive-foreground: 45 25% 88%;
+    --border: 25 25% 35%;
+    --input: 25 25% 28%;
+    --ring: 15 85% 65%;
   }
 
-  /* 🌆 DUSK GLOW EFFECTS */
+  /* 🌆 DUSK SUNSET GRADIENT EFFECTS */
   .dusk::before {
     content: '';
     position: fixed;
@@ -285,9 +285,51 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(180deg, rgba(147, 112, 219, 0.1) 0%, transparent 50%);
+    background: 
+      linear-gradient(180deg, 
+        rgba(255, 94, 77, 0.15) 0%,
+        rgba(255, 154, 0, 0.12) 25%,
+        rgba(138, 43, 226, 0.1) 60%,
+        rgba(25, 25, 112, 0.08) 100%
+      );
     pointer-events: none;
     z-index: -1;
+    animation: sunsetGlow 8s ease-in-out infinite alternate;
+  }
+
+  .dusk::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 300px;
+    height: 300px;
+    background: 
+      radial-gradient(circle, 
+        rgba(255, 94, 77, 0.3) 0%,
+        rgba(255, 154, 0, 0.2) 40%,
+        transparent 70%
+      );
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: -1;
+    animation: sunsetOrb 12s ease-in-out infinite alternate;
+  }
+
+  @keyframes sunsetGlow {
+    0% { opacity: 0.6; }
+    100% { opacity: 1; }
+  }
+
+  @keyframes sunsetOrb {
+    0% { 
+      transform: translate(20px, 20px) scale(1);
+      opacity: 0.4;
+    }
+    100% { 
+      transform: translate(-20px, 40px) scale(1.1);
+      opacity: 0.7;
+    }
   }
 
   /* 💫 CYBERPUNK NEON THEME */
@@ -334,30 +376,30 @@
     100% { opacity: 0.8; }
   }
 
-  /* ❄️ MINIMAL GLACIER THEME */
+  /* ❄️ MINIMAL GLACIER THEME - ICE GRADIENT ENHANCEMENT */
   .minimal-glacier {
-    --background: 189 45% 98%;
-    --foreground: 189 40% 15%;
-    --card: 0 0% 100%;
-    --card-foreground: 189 40% 15%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 189 40% 15%;
-    --primary: 189 65% 75%;
-    --primary-foreground: 189 40% 15%;
-    --secondary: 189 25% 92%;
-    --secondary-foreground: 189 40% 15%;
-    --muted: 189 25% 90%;
-    --muted-foreground: 189 25% 40%;
-    --accent: 189 25% 92%;
-    --accent-foreground: 189 40% 15%;
+    --background: 195 55% 96%;
+    --foreground: 195 40% 15%;
+    --card: 195 35% 98%;
+    --card-foreground: 195 40% 15%;
+    --popover: 195 35% 98%;
+    --popover-foreground: 195 40% 15%;
+    --primary: 195 75% 70%;
+    --primary-foreground: 195 40% 15%;
+    --secondary: 195 30% 92%;
+    --secondary-foreground: 195 40% 15%;
+    --muted: 195 25% 90%;
+    --muted-foreground: 195 25% 40%;
+    --accent: 195 30% 88%;
+    --accent-foreground: 195 40% 15%;
     --destructive: 0 75% 50%;
     --destructive-foreground: 0 0% 100%;
-    --border: 189 25% 85%;
-    --input: 189 25% 90%;
-    --ring: 189 65% 75%;
+    --border: 195 25% 85%;
+    --input: 195 25% 90%;
+    --ring: 195 75% 70%;
   }
 
-  /* ❄️ MINIMAL GLACIER SUBTLE EFFECTS */
+  /* ❄️ MINIMAL GLACIER ICE GRADIENT EFFECTS */
   .minimal-glacier::before {
     content: '';
     position: fixed;
@@ -366,9 +408,50 @@
     width: 100%;
     height: 100%;
     background: 
-      radial-gradient(circle at 50% 0%, rgba(163, 231, 240, 0.1) 0%, transparent 50%);
+      linear-gradient(135deg, 
+        rgba(255, 255, 255, 0.8) 0%,
+        rgba(240, 249, 255, 0.6) 25%,
+        rgba(219, 234, 254, 0.4) 50%,
+        rgba(186, 230, 253, 0.3) 75%,
+        rgba(163, 231, 240, 0.2) 100%
+      );
     pointer-events: none;
     z-index: -1;
+    animation: glacierShimmer 10s ease-in-out infinite alternate;
+  }
+
+  .minimal-glacier::after {
+    content: '';
+    position: fixed;
+    top: -50%;
+    left: -10%;
+    width: 120%;
+    height: 120%;
+    background: 
+      radial-gradient(ellipse at center, 
+        rgba(240, 249, 255, 0.3) 0%,
+        rgba(219, 234, 254, 0.2) 30%,
+        transparent 60%
+      );
+    pointer-events: none;
+    z-index: -1;
+    animation: glacierBreath 15s ease-in-out infinite alternate;
+  }
+
+  @keyframes glacierShimmer {
+    0% { opacity: 0.7; }
+    100% { opacity: 1; }
+  }
+
+  @keyframes glacierBreath {
+    0% { 
+      transform: scale(1) rotate(0deg);
+      opacity: 0.3;
+    }
+    100% { 
+      transform: scale(1.05) rotate(2deg);
+      opacity: 0.5;
+    }
   }
 
   /* 🌲 FOREST ZEN THEME */
@@ -470,15 +553,44 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
-    transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   }
 
-  /* Enhanced smooth transitions for theme changes */
+  /* Enhanced smooth transitions for theme changes - OPTIMIZED */
+  html {
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
   * {
-    transition: background-color 0.6s cubic-bezier(0.4, 0, 0.2, 1), 
-               border-color 0.6s cubic-bezier(0.4, 0, 0.2, 1), 
-               color 0.6s cubic-bezier(0.4, 0, 0.2, 1),
-               box-shadow 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: background-color 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), 
+               border-color 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), 
+               color 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+               box-shadow 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  /* Prevent layout shifts during theme transitions */
+  .theme-transition-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 9999;
+    pointer-events: none;
+    background: transparent;
+    transition: background-color 0.2s ease-out;
+  }
+
+  .theme-transition-overlay.active {
+    background-color: rgba(0, 0, 0, 0.1);
+  }
+
+  /* Enhanced page header transitions */
+  .page-header h1,
+  .page-header h2,
+  .page-header h3,
+  .page-header p {
+    transition: color 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
   }
 
   /* Enhanced button hover effects */
@@ -486,6 +598,7 @@
     position: relative;
     overflow: hidden;
     transform: translateZ(0);
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   }
 
   .theme-button::before {
@@ -516,7 +629,7 @@
 
   /* Settings card enhanced animations */
   .settings-card {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   }
 
   .settings-card:hover {

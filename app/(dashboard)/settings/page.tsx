@@ -22,7 +22,8 @@ const THEMES = [
     description: "Giao diện sáng cổ điển",
     icon: SunIcon,
     className: "bg-white border-gray-200 text-gray-900",
-    preview: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)"
+    preview: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+    type: "light" // Theme type for adaptive text color
   },
   {
     value: "dark", 
@@ -30,7 +31,8 @@ const THEMES = [
     description: "Giao diện tối dễ nhìn",
     icon: MoonIcon,
     className: "bg-gray-900 border-gray-700 text-gray-100",
-    preview: "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)"
+    preview: "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)",
+    type: "dark"
   },
   {
     value: "dusk",
@@ -38,7 +40,8 @@ const THEMES = [
     description: "Ánh hoàng hôn ấm áp",
     icon: SunsetIcon,
     className: "bg-purple-900 border-purple-700 text-purple-100",
-    preview: "linear-gradient(135deg, #581c87 0%, #7c2d12 100%)"
+    preview: "linear-gradient(135deg, #ff5e4d 0%, #ff9a00 25%, #8a2be2 60%, #191970 100%)",
+    type: "dark"
   },
   {
     value: "cyberpunk-neon",
@@ -46,7 +49,8 @@ const THEMES = [
     description: "Tương lai rực rỡ",
     icon: ZapIcon,
     className: "bg-blue-950 border-cyan-500 text-cyan-100",
-    preview: "linear-gradient(135deg, #030712 0%, #1e1b4b 50%, #581c87 100%)"
+    preview: "linear-gradient(135deg, #030712 0%, #1e1b4b 50%, #581c87 100%)",
+    type: "dark"
   },
   {
     value: "minimal-glacier",
@@ -54,7 +58,8 @@ const THEMES = [
     description: "Tối giản như băng tuyết",
     icon: MountainIcon,
     className: "bg-blue-50 border-blue-200 text-blue-900",
-    preview: "linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)"
+    preview: "linear-gradient(135deg, #ffffff 0%, #f0f9ff 25%, #dbeafe 50%, #bae6fd 75%, #a3e7f0 100%)",
+    type: "light"
   },
   {
     value: "forest-zen",
@@ -62,7 +67,8 @@ const THEMES = [
     description: "Yên bình như rừng xanh",
     icon: TreesIcon,
     className: "bg-green-800 border-green-600 text-green-100",
-    preview: "linear-gradient(135deg, #365314 0%, #166534 100%)"
+    preview: "linear-gradient(135deg, #365314 0%, #166534 100%)",
+    type: "dark"
   },
   {
     value: "mono-code",
@@ -70,7 +76,8 @@ const THEMES = [
     description: "Terminal cho dev",
     icon: CodeIcon,
     className: "bg-gray-900 border-green-400 text-green-400 font-mono",
-    preview: "linear-gradient(135deg, #1e1e1e 0%, #0d1117 100%)"
+    preview: "linear-gradient(135deg, #1e1e1e 0%, #0d1117 100%)",
+    type: "dark"
   }
 ];
 
@@ -237,15 +244,33 @@ export default function SettingsPage() {
     });
   }, []);
 
-  // Function to apply theme class to document
+  // Function to apply theme class to document with smooth transition
   const applyThemeClass = useCallback((themeValue: string) => {
+    // Create transition overlay to prevent flickering
+    const overlay = document.createElement('div');
+    overlay.className = 'theme-transition-overlay active';
+    document.body.appendChild(overlay);
+    
     // Remove all existing theme classes first
     removeAllThemeClasses();
     
-    // Add the new theme class
-    if (themeValue !== 'system') {
-      document.documentElement.classList.add(themeValue);
-    }
+    // Small delay to ensure clean state before applying new theme
+    setTimeout(() => {
+      // Add the new theme class
+      if (themeValue !== 'system') {
+        document.documentElement.classList.add(themeValue);
+      }
+      
+      // Remove overlay after transition
+      setTimeout(() => {
+        overlay.classList.remove('active');
+        setTimeout(() => {
+          if (overlay.parentNode) {
+            overlay.parentNode.removeChild(overlay);
+          }
+        }, 200);
+      }, 100);
+    }, 50);
   }, [removeAllThemeClasses]);
 
   // Unlock Starry Night theme
@@ -354,7 +379,7 @@ export default function SettingsPage() {
     window.location.reload();
   };
 
-  // Handle theme change
+  // Handle theme change with optimized synchronization
   const handleThemeChange = useCallback((value: string) => {
     // Handle special starry night theme
     if (value === "starry-night") {
@@ -370,7 +395,7 @@ export default function SettingsPage() {
       window.dispatchEvent(new CustomEvent('starryNightToggle'));
     }
 
-    // Apply the new theme
+    // Apply the new theme with transition
     setTheme(value);
     applyThemeClass(value);
     playSound('switch');
@@ -668,7 +693,7 @@ export default function SettingsPage() {
       <div className="container py-6 space-y-6">
         <PageHeader
           heading="Cài đặt hệ thống"
-          description="Tùy chỉnh giao diện và các thiết lập cá nhân"
+          description="Tùy chỉnh giao diện và các thiết lập cá nhân hóa"
         />
 
         {/* Konami code hint for unlocking Starry Night */}
@@ -813,18 +838,30 @@ export default function SettingsPage() {
                     {THEMES.map((themeItem) => {
                       const IconComponent = themeItem.icon;
                       const isActive = theme === themeItem.value;
+                      const isHovering = previewTheme === themeItem.value;
+                      
+                      // Determine text color based on theme type and hover state
+                      const getTextColor = () => {
+                        if (isHovering) {
+                          return themeItem.type === 'light' ? 'text-gray-900' : 'text-white';
+                        }
+                        return isActive 
+                          ? (themeItem.type === 'light' ? 'text-gray-900' : 'text-white')
+                          : '';
+                      };
                       
                       return (
                         <Button
                           key={themeItem.value}
                           variant={isActive ? "default" : "outline"}
-                          className="h-16 p-3 flex flex-col items-center justify-center theme-button transition-all duration-300 hover:scale-105 relative overflow-hidden"
+                          className={`h-16 p-3 flex flex-col items-center justify-center theme-button transition-all duration-300 hover:scale-105 relative overflow-hidden ${getTextColor()}`}
                           onClick={() => handleThemeChange(themeItem.value)}
                           onMouseEnter={() => handleThemePreview(themeItem.value)}
                           onMouseLeave={clearThemePreview}
                           data-theme={themeItem.value}
                           style={{
-                            background: previewTheme === themeItem.value ? themeItem.preview : undefined
+                            background: (isHovering || isActive) ? themeItem.preview : undefined,
+                            color: isHovering ? (themeItem.type === 'light' ? '#1f2937' : '#ffffff') : undefined
                           }}
                         >
                           <IconComponent className="h-5 w-5 mb-1" />
