@@ -166,7 +166,7 @@ const AssignmentHeader = ({
               "forest-zen:text-purple-400",
               "mono-code:text-green-400"
             )} />
-            <span>Loại bài: Bài thi - Thời gian: {formattedTimer}</span>
+            <span>Loại bài: Bài kiểm tra tính giờ - Thời gian: {formattedTimer}</span>
           </div>
         )}
       </div>

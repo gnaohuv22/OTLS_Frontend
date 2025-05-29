@@ -132,6 +132,7 @@ function EditAssignmentForm() {
         }
         
         const assignmentData = assignmentResponse.data;
+        assignmentData.assignmentType = assignmentData.assignmentType.toLowerCase().trim();
         setAssignment(assignmentData);
         
         // Update form state with assignment data
@@ -574,37 +575,63 @@ function EditAssignmentForm() {
                 onValueChange={(value) => 
                   handleAssignmentTypeChange(value as any)
                 }
+                defaultValue={assignmentType}
               >
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="text" className="flex items-center gap-2 transition-all hover:bg-primary/10">
-                    <FileText className="h-4 w-4" />
-                    Bài tập tự luận
-                  </TabsTrigger>
-                  <TabsTrigger value="quiz" className="flex items-center gap-2 transition-all hover:bg-primary/10">
-                    <List className="h-4 w-4" />
-                    Trắc nghiệm
-                  </TabsTrigger>
-                </TabsList>
+                {/* Only show tab list if we're creating a new assignment (when we can choose type) */}
+                {!assignment || !assignment.assignmentId ? (
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="text" className="flex items-center gap-2 transition-all hover:bg-primary/10">
+                      <FileText className="h-4 w-4" />
+                      Bài tập tự luận
+                    </TabsTrigger>
+                    <TabsTrigger value="quiz" className="flex items-center gap-2 transition-all hover:bg-primary/10">
+                      <List className="h-4 w-4" />
+                      Trắc nghiệm
+                    </TabsTrigger>
+                  </TabsList>
+                ) : (
+                  /* For existing assignments, show a header indicating the type */
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium flex items-center gap-2">
+                      {assignmentType === 'text' ? (
+                        <>
+                          <FileText className="h-5 w-5" />
+                          Bài tập tự luận
+                        </>
+                      ) : (
+                        <>
+                          <List className="h-5 w-5" />
+                          Trắc nghiệm
+                        </>
+                      )}
+                    </h3>
+                  </div>
+                )}
 
-                {/* Text Assignment */}
-                <TabsContent value="text" className="animate-fade-in">
-                  <Suspense fallback={<LoadingPlaceholder height="400px" />}>
-                    <TextAssignment 
-                      initialContent={textContent} 
-                      onContentChange={handleTextContentChange}
-                    />
-                  </Suspense>
-                </TabsContent>
+                {/* Text Assignment - Only show if this is a text assignment */}
+                {assignmentType === 'text' && (
+                  <TabsContent value="text" className="animate-fade-in">
+                    <Suspense fallback={<LoadingPlaceholder height="400px" />}>
+                      <TextAssignment 
+                        initialContent={textContent} 
+                        onContentChange={handleTextContentChange}
+                        key={`text-editor-${assignmentId}`}
+                      />
+                    </Suspense>
+                  </TabsContent>
+                )}
 
-                {/* Quiz Assignment */}
-                <TabsContent value="quiz" className="animate-fade-in">
-                  <Suspense fallback={<LoadingPlaceholder height="500px" />}>
-                    <div className="space-y-6">
-                      {/* Manual Quiz Editor */}
-                      <QuizAssignment />
-                    </div>
-                  </Suspense>
-                </TabsContent>
+                {/* Quiz Assignment - Only show if this is a quiz assignment */}
+                {assignmentType === 'quiz' && (
+                  <TabsContent value="quiz" className="animate-fade-in">
+                    <Suspense fallback={<LoadingPlaceholder height="500px" />}>
+                      <div className="space-y-6">
+                        {/* Manual Quiz Editor */}
+                        <QuizAssignment />
+                      </div>
+                    </Suspense>
+                  </TabsContent>
+                )}
               </Tabs>
             </div>
 

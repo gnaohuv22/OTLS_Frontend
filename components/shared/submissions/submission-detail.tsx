@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, Clock, User, ArrowLeft, CheckCircle, XCircle } from "lucide-react";
+import { Loader2, Clock, User, ArrowLeft, CheckCircle, XCircle, FileText, List } from "lucide-react";
 import { getSubmissionById, getAssignmentById, getQuizsByAssignmentId, updateSubmission } from "@/lib/api/assignment";
 import { useToast } from "@/components/ui/use-toast";
 import { useRouter } from 'next/navigation';
@@ -40,6 +40,7 @@ export function SubmissionDetail({
   allowEdit = false
 }: SubmissionDetailProps) {
   const [submission, setSubmission] = useState<any>(null);
+  const [assignment, setAssignment] = useState<any>(null);
   const [quizQuestions, setQuizQuestions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedGrading, setExpandedGrading] = useState(false);
@@ -82,6 +83,7 @@ export function SubmissionDetail({
               maxPoints: assignmentResponse.data.maxPoints || 100
             }
           });
+          setAssignment(assignmentResponse.data);
         } else {
           setSubmission(response.data);
         }
@@ -139,6 +141,34 @@ export function SubmissionDetail({
         return <Badge variant="outline" className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Nộp muộn</Badge>;
       default:
         return <Badge>{status}</Badge>;
+    }
+  };
+
+  // Get assignment type badge
+  const getAssignmentTypeBadge = () => {
+    if (!assignment) return null;
+    
+    switch (assignment.assignmentType?.toLowerCase()) {
+      case 'text':
+        return (
+          <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+            <FileText className="h-3 w-3 mr-1" />
+            Bài tập tự luận
+          </Badge>
+        );
+      case 'quiz':
+        return (
+          <Badge variant="outline" className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+            <List className="h-3 w-3 mr-1" />
+            Trắc nghiệm
+          </Badge>
+        );
+      default:
+        return (
+          <Badge variant="outline">
+            Bài tập
+          </Badge>
+        );
     }
   };
 
@@ -291,7 +321,10 @@ export function SubmissionDetail({
             <ArrowLeft className="h-4 w-4 mr-2" />
             Quay lại
           </Button>
-          {submission?.status ? getStatusBadge(submission.status) : null}
+          <div className="flex gap-2">
+            {getAssignmentTypeBadge()}
+            {submission?.status ? getStatusBadge(submission.status) : null}
+          </div>
         </div>
         <CardTitle>{assignmentTitle}</CardTitle>
         <CardDescription>Chi tiết bài nộp</CardDescription>
@@ -321,23 +354,54 @@ export function SubmissionDetail({
 
             <Separator />
 
-            {/* Quiz answers section */}
-            {Object.keys(submission.answers || {}).length > 0 && (
+            {/* Submission content based on assignment type */}
+            {assignment?.assignmentType?.toLowerCase() === 'quiz' ? (
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Câu trả lời trắc nghiệm</h3>
-                {renderQuizAnswers()}
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <List className="h-5 w-5" />
+                  Câu trả lời trắc nghiệm
+                </h3>
+                {Object.keys(submission.answers || {}).length > 0 ? (
+                  renderQuizAnswers()
+                ) : (
+                  <p className="text-muted-foreground">Không có câu trả lời</p>
+                )}
               </div>
-            )}
+            ) : assignment?.assignmentType?.toLowerCase() === 'text' ? (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Bài tự luận
+                </h3>
+                {submission.textContent ? (
+                  <div 
+                    className="prose max-w-none dark:prose-invert"
+                    dangerouslySetInnerHTML={{ __html: submission.textContent }}
+                  />
+                ) : (
+                  <p className="text-muted-foreground">Không có nội dung bài làm</p>
+                )}
+              </div>
+            ) : (
+              <>
+                {/* Fallback for both content types or unknown types */}
+                {Object.keys(submission.answers || {}).length > 0 && (
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Câu trả lời trắc nghiệm</h3>
+                    {renderQuizAnswers()}
+                  </div>
+                )}
 
-            {/* Text content section */}
-            {submission.textContent && (
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Bài tự luận</h3>
-                <div 
-                  className="prose max-w-none dark:prose-invert"
-                  dangerouslySetInnerHTML={{ __html: submission.textContent }}
-                />
-              </div>
+                {submission.textContent && (
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Bài tự luận</h3>
+                    <div 
+                      className="prose max-w-none dark:prose-invert"
+                      dangerouslySetInnerHTML={{ __html: submission.textContent }}
+                    />
+                  </div>
+                )}
+              </>
             )}
 
             <Separator />

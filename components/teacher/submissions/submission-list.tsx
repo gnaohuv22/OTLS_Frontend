@@ -25,7 +25,9 @@ import {
   ArrowUpDown,
   ArrowDown,
   ArrowUp,
-  Filter
+  Filter,
+  FileText,
+  List
 } from "lucide-react";
 import { getSubmissionsByAssignmentId, deleteSubmission, getAssignmentById } from "@/lib/api/assignment";
 import { useToast } from "@/components/ui/use-toast";
@@ -157,7 +159,7 @@ export function SubmissionList({
     } finally {
       setIsLoading(false);
     }
-  }, [assignmentId, toast]);
+  }, [assignmentId]);
 
   // Fetch submissions
   useEffect(() => {
@@ -209,6 +211,30 @@ export function SubmissionList({
 
   // Check if assignment is an exam
   const isExam = assignment?.timer && assignment.timer !== "0";
+  
+  // Determine assignment type display
+  const assignmentTypeDisplay = useMemo(() => {
+    switch (assignmentType?.toLowerCase()) {
+      case 'text':
+        return {
+          label: 'Bài tập tự luận',
+          icon: <FileText className="h-3 w-3" />,
+          class: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+        };
+      case 'quiz':
+        return {
+          label: 'Trắc nghiệm',
+          icon: <List className="h-3 w-3" />,
+          class: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+        };
+      default:
+        return {
+          label: 'Bài tập',
+          icon: null,
+          class: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+        };
+    }
+  }, [assignmentType]);
   
   // Handle sort toggle
   const handleSortToggle = (key: SortKey) => {
@@ -302,6 +328,10 @@ export function SubmissionList({
                   <Clock className="mr-1 h-3 w-3" /> Bài kiểm tra
                 </Badge>
               )}
+              <Badge variant="outline" className={assignmentTypeDisplay.class}>
+                {assignmentTypeDisplay.icon && <span className="mr-1">{assignmentTypeDisplay.icon}</span>}
+                {assignmentTypeDisplay.label}
+              </Badge>
             </div>
             <CardDescription>
               {assignmentTitle} - {submissions.length} bài nộp
