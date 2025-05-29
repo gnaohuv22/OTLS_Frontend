@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, Suspense, useCallback, useMemo, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import {
@@ -90,6 +90,7 @@ function EditAssignmentForm() {
   const [classes, setClasses] = useState<{id: string, name: string}[]>([]);
   const [subjects, setSubjects] = useState<SubjectDTO[]>([]);
   const [assignment, setAssignment] = useState<AssignmentDetails | null>(null);
+  const contentLoadedRef = useRef(false);
 
   // Sử dụng state từ context
   const { 
@@ -124,6 +125,7 @@ function EditAssignmentForm() {
       
       try {
         setIsLoadingAssignment(true);
+        contentLoadedRef.current = false;
         
         // Fetch assignment details
         const assignmentResponse = await getAssignmentById(assignmentId);
@@ -153,6 +155,8 @@ function EditAssignmentForm() {
         // Set text content if applicable
         if (assignmentData.assignmentType === 'text' && assignmentData.textContent) {
           setTextContent(assignmentData.textContent);
+          // Mark that content has been loaded
+          contentLoadedRef.current = true;
         }
         
         // Fetch quiz questions if it's a quiz assignment
@@ -472,6 +476,20 @@ function EditAssignmentForm() {
     setTextContent(content);
   }, [setTextContent]);
 
+  // Text Assignment Component - Separate from the main render to avoid re-renders
+  const TextAssignmentComponent = useMemo(() => {
+    if (assignmentType !== 'text') return null;
+    
+    return (
+      <Suspense fallback={<LoadingPlaceholder height="400px" />}>
+        <TextAssignment 
+          initialContent={textContent} 
+          onContentChange={handleTextContentChange}
+        />
+      </Suspense>
+    );
+  }, [assignmentType, textContent, handleTextContentChange]);
+
   if (isLoadingAssignment) {
     return (
       <AuthGuard allowedRoles={['Teacher', 'Admin']}>
@@ -611,13 +629,7 @@ function EditAssignmentForm() {
                 {/* Text Assignment - Only show if this is a text assignment */}
                 {assignmentType === 'text' && (
                   <TabsContent value="text" className="animate-fade-in">
-                    <Suspense fallback={<LoadingPlaceholder height="400px" />}>
-                      <TextAssignment 
-                        initialContent={textContent} 
-                        onContentChange={handleTextContentChange}
-                        key={`text-editor-${assignmentId}`}
-                      />
-                    </Suspense>
+                    {TextAssignmentComponent}
                   </TabsContent>
                 )}
 

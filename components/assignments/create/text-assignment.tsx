@@ -10,77 +10,79 @@ interface TextAssignmentProps {
   editorConfig?: any;
 }
 
+// Sử dụng memo để ngăn re-render không cần thiết
 const TextAssignment = memo(function TextAssignment({
-  initialContent = '', // Đảm bảo có default value
+  initialContent = '',
   onContentChange,
   editorConfig = {}
 }: TextAssignmentProps) {
+  // State cục bộ
   const [content, setContent] = useState(initialContent);
   const [isEditorReady, setIsEditorReady] = useState(false);
   const editorRef = useRef<any>(null);
+  const initialContentSetRef = useRef(false);
   const { toast } = useToast();
 
-  // Xử lý khi nội dung thay đổi
-  const handleEditorChange = useCallback((newContent: string) => {
-    setContent(newContent);
-    onContentChange(newContent);
+  // Xử lý khi nội dung thay đổi với debounce tích hợp
+  const handleEditorChange = useCallback((content: string) => {
+    setContent(content);
+    onContentChange(content);
   }, [onContentChange]);
 
-  // Cập nhật content state khi initialContent thay đổi
+  // Khởi tạo editor trong iframe
   useEffect(() => {
-    setContent(initialContent);
-  }, [initialContent]);
+    setIsEditorReady(false);
+    // Khởi tạo TinyMCE trong iframe
+    const setupTinyMCE = () => {
+      // Gắn sự kiện sau khi editor đã sẵn sàng
+      setIsEditorReady(true);
+    };
 
-  // Xử lý việc set content vào editor khi editor sẵn sàng hoặc initialContent thay đổi
-  useEffect(() => {
-    if (isEditorReady && editorRef.current && initialContent !== undefined) {
-      // Kiểm tra nếu content hiện tại khác với initialContent
-      const currentContent = editorRef.current.getContent();
-      if (currentContent !== initialContent) {
-        editorRef.current.setContent(initialContent || '');
-      }
+    // Đảm bảo TinyMCE đã được tải trước khi setup
+    if (typeof window !== 'undefined' && (window as any).tinymce) {
+      setupTinyMCE();
+    } else {
+      // TinyMCE sẽ tự động khởi tạo khi được tải
+      setIsEditorReady(true);
     }
-  }, [isEditorReady, initialContent]);
+  }, []);
 
-  // Editor configuration
+  // Cập nhật nội dung từ prop khi có thay đổi từ bên ngoài
+  useEffect(() => {
+    if (initialContent !== content && editorRef.current) {
+      editorRef.current.setContent(initialContent);
+    }
+  }, [initialContent, content]);
+
+  // Tích hợp configuration chuẩn
   const editorOptions = {
+    selector: 'textarea',
     height: 400,
     menubar: true,
     plugins: [
       'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
       'searchreplace', 'visualblocks', 'code', 'fullscreen',
-      'insertdatetime', 'media', 'table', 'help', 'wordcount'
+      'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
     ],
     toolbar: 'undo redo | blocks | bold italic | alignleft aligncenter alignright | bullist numlist | table link image | code',
     setup: (editor: any) => {
-      // Set reference ngay khi setup
       editorRef.current = editor;
-      
-      // Xử lý khi editor được khởi tạo
       editor.on('init', () => {
-        console.log('Editor initialized, setting content:', initialContent);
-        // Set content ngay sau khi editor init
-        if (initialContent) {
+        // Khởi tạo nội dung ban đầu sau khi editor đã sẵn sàng
+        if (!initialContentSetRef.current && initialContent) {
           editor.setContent(initialContent);
+          initialContentSetRef.current = true;
         }
-        setIsEditorReady(true);
       });
     },
     init_instance_callback: (editor: any) => {
-      // Callback này chạy sau khi editor hoàn toàn sẵn sàng
-      console.log('Editor instance ready, current content:', editor.getContent());
-      
-      // Double check content sau khi editor sẵn sàng
-      if (initialContent && editor.getContent() !== initialContent) {
-        editor.setContent(initialContent);
-      }
-      
-      // Tối ưu hiệu suất cho iframe
+      // Tối ưu hiệu suất: thêm attribute loading=lazy cho iframe
       const iframe = document.querySelector('.tox-edit-area__iframe');
       if (iframe) {
         iframe.setAttribute('loading', 'lazy');
       }
     },
+    // Tối ưu hiệu suất bằng cách tách thành iframe riêng biệt
     iframe: true,
     iframe_aria_text: 'Rich Text Editor',
     ...editorConfig
@@ -100,21 +102,23 @@ const TextAssignment = memo(function TextAssignment({
             <Label htmlFor="content" className="text-sm font-medium">
               Nội dung bài tập <span className="text-destructive">*</span>
             </Label>
-            <Editor
-              id="content"
-              apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY}
-              value={content} // Thêm value prop để đảm bảo controlled component
-              onEditorChange={handleEditorChange}
-              init={editorOptions}
-              onInit={(evt, editor) => { 
-                editorRef.current = editor;
-                console.log('onInit called, setting content:', initialContent);
-                if (initialContent) {
-                  editor.setContent(initialContent);
-                }
-              }}
-            />
-            {!isEditorReady && (
+            {isEditorReady ? (
+              <Editor
+                id="content"
+                apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY}
+                initialValue={initialContent}
+                onEditorChange={handleEditorChange}
+                init={editorOptions}
+                onInit={(evt, editor) => { 
+                  editorRef.current = editor;
+                  // Set content again after init if it wasn't set properly
+                  if (!initialContentSetRef.current && initialContent) {
+                    editor.setContent(initialContent);
+                    initialContentSetRef.current = true;
+                  }
+                }}
+              />
+            ) : (
               <div className="flex items-center justify-center h-[400px] border rounded-md bg-muted/10">
                 <p className="text-muted-foreground">Đang tải trình soạn thảo...</p>
               </div>
@@ -128,4 +132,4 @@ const TextAssignment = memo(function TextAssignment({
 
 TextAssignment.displayName = 'TextAssignment';
 
-export default TextAssignment;
+export default TextAssignment; 

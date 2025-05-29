@@ -288,6 +288,16 @@ export const getAssignmentsByClassId = async (classId: string): Promise<ApiRespo
 export const getQuizsByAssignmentId = async (assignmentId: string): Promise<ApiResponse<QuizAssignmentResponse>> => {
   try {
     const response = await api.get<ApiResponse<QuizAssignmentResponse>>(`/assignment/get-quizs-by-assignmentId/${assignmentId}`);
+    
+    // Sắp xếp data theo createAt tăng dần
+    if (response.data.data && Array.isArray(response.data.data)) {
+      response.data.data.sort((a, b) => {
+        const dateA = new Date(a.createAt).getTime();
+        const dateB = new Date(b.createAt).getTime();
+        return dateA - dateB; // Tăng dần
+      });
+    }
+    
     return response.data;
   } catch (error: any) {
     console.error('Error fetching quizzes by assignment ID:', error);
