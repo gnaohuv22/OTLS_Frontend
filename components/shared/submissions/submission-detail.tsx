@@ -138,7 +138,7 @@ export function SubmissionDetail({
       case 'stopped with caution':
         return <Badge variant="destructive">Nộp bắt buộc</Badge>;
       case 'late':
-        return <Badge variant="outline" className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Nộp muộn</Badge>;
+        return <Badge variant="outline" className="bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">Nộp muộn</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
@@ -151,14 +151,14 @@ export function SubmissionDetail({
     switch (assignment.assignmentType?.toLowerCase()) {
       case 'text':
         return (
-          <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+          <Badge variant="outline" className="bg-accent/50 text-accent-foreground">
             <FileText className="h-3 w-3 mr-1" />
             Bài tập tự luận
           </Badge>
         );
       case 'quiz':
         return (
-          <Badge variant="outline" className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+          <Badge variant="outline" className="bg-secondary/70 text-secondary-foreground">
             <List className="h-3 w-3 mr-1" />
             Trắc nghiệm
           </Badge>
@@ -217,35 +217,37 @@ export function SubmissionDetail({
           const studentAnswerIndices = studentAnswerValue ? studentAnswerValue.split(',').map((s: string) => parseInt(s.trim())) : [];
 
           return (
-            <div key={question.quizQuestionId} className="border rounded-md p-4">
-              <h4 className="font-medium mb-2">{question.question}</h4>
+            <div key={question.quizQuestionId} className="border rounded-md p-5 bg-card shadow-sm">
+              <h4 className="font-medium text-lg mb-3 text-slate-900 dark:text-slate-50">{question.question}</h4>
               
               <div className="mt-2 space-y-2">
                 {question.options.map((option: string, optIndex: number) => {
                   const isStudentSelected = studentAnswerIndices.includes(optIndex);
                   const isCorrect = question.correctOptions.includes(optIndex);
                   
-                  // Determine styling based on correctness
-                  let optionClass = "p-2 rounded-md flex items-center";
+                  // Determine styling based on correctness using theme variables with better contrast
+                  let optionClass = "p-3 rounded-md flex items-center mb-1.5 transition-colors";
                   if (isStudentSelected && isCorrect) {
-                    optionClass += " bg-green-100 text-green-800";
+                    optionClass += " bg-green-100 dark:bg-green-900/60 text-green-800 dark:text-green-100 border border-green-300 dark:border-green-700";
                   } else if (isStudentSelected && !isCorrect) {
-                    optionClass += " bg-red-100 text-red-800";
+                    optionClass += " bg-red-100 dark:bg-red-900/60 text-red-800 dark:text-red-100 border border-red-300 dark:border-red-700";
                   } else if (!isStudentSelected && isCorrect) {
-                    optionClass += " bg-blue-100 text-blue-800";
+                    optionClass += " bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-100 border border-blue-300 dark:border-blue-700";
+                  } else {
+                    optionClass += " bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700";
                   }
                   
                   return (
                     <div key={optIndex} className={optionClass}>
                       {isStudentSelected && isCorrect && (
-                        <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
+                        <CheckCircle className="h-4 w-4 mr-2 text-green-600 dark:text-green-400" />
                       )}
                       {isStudentSelected && !isCorrect && (
-                        <XCircle className="h-4 w-4 mr-2 text-red-600" />
+                        <XCircle className="h-4 w-4 mr-2 text-red-600 dark:text-red-400" />
                       )}
-                      <span>{option}</span>
+                      <span className="flex-1">{option}</span>
                       {!isStudentSelected && isCorrect && (
-                        <span className="ml-2 text-xs text-blue-600">(Đáp án đúng)</span>
+                        <span className="ml-2 text-xs font-medium px-1.5 py-0.5 rounded bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200">Đáp án đúng</span>
                       )}
                     </div>
                   );
@@ -253,9 +255,9 @@ export function SubmissionDetail({
               </div>
               
               {question.explanation && (
-                <div className="mt-3 p-2 bg-slate-50 dark:bg-slate-900 rounded border-l-2 border-primary text-sm">
-                  <p className="font-medium">Giải thích:</p>
-                  <p>{question.explanation}</p>
+                <div className="mt-4 p-3 rounded-md border-l-4 border-blue-500 dark:border-blue-400 text-sm bg-blue-50 dark:bg-blue-950/50 shadow-sm">
+                  <p className="font-medium text-blue-800 dark:text-blue-300 mb-1">Giải thích:</p>
+                  <div className="text-slate-700 dark:text-slate-300 prose-sm prose-p:my-1">{question.explanation}</div>
                 </div>
               )}
             </div>
@@ -375,7 +377,7 @@ export function SubmissionDetail({
                 </h3>
                 {submission.textContent ? (
                   <div 
-                    className="prose max-w-none dark:prose-invert"
+                    className="prose max-w-none dark:prose-invert prose-slate dark:prose-invert-slate"
                     dangerouslySetInnerHTML={{ __html: submission.textContent }}
                   />
                 ) : (
@@ -396,7 +398,7 @@ export function SubmissionDetail({
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold">Bài tự luận</h3>
                     <div 
-                      className="prose max-w-none dark:prose-invert"
+                      className="prose max-w-none dark:prose-invert prose-slate dark:prose-invert-slate"
                       dangerouslySetInnerHTML={{ __html: submission.textContent }}
                     />
                   </div>
@@ -434,7 +436,7 @@ export function SubmissionDetail({
                     <div className="font-medium">Nhận xét:</div>
                     {submission.feedback ? (
                       <div 
-                        className="prose max-w-none dark:prose-invert"
+                        className="prose max-w-none dark:prose-invert prose-slate dark:prose-invert-slate rounded border border-border p-3 bg-card"
                         dangerouslySetInnerHTML={{ __html: submission.feedback }}
                       />
                     ) : (
@@ -444,10 +446,10 @@ export function SubmissionDetail({
                 </>
               ) : (
                 // Expanded grading UI
-                <div className="space-y-6 border p-4 rounded-md">
+                <div className="space-y-6 border p-4 rounded-md bg-card">
                   <div className="space-y-4">
                     <div>
-                      <label htmlFor="grade" className="block text-sm font-medium mb-1">Điểm số:</label>
+                      <label htmlFor="grade" className="block text-sm font-medium mb-1 text-foreground">Điểm số:</label>
                       <div className="flex items-center gap-2">
                         <Input 
                           id="grade" 
@@ -468,7 +470,7 @@ export function SubmissionDetail({
                     </div>
                     
                     <div>
-                      <label htmlFor="feedback" className="block text-sm font-medium mb-1">Nhận xét:</label>
+                      <label htmlFor="feedback" className="block text-sm font-medium mb-1 text-foreground">Nhận xét:</label>
                       <EditorComponent
                         content={feedback}
                         onContentChange={handleFeedbackChange}
