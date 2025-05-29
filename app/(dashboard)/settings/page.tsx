@@ -574,12 +574,6 @@ export default function SettingsPage() {
         description: "Cảm nhận vẻ đẹp truyền thống trong không gian hiện đại",
         duration: 3000,
       });
-    } else if (value === 'deep-ocean') {
-      toast({
-        title: "🌊 Đã kích hoạt chủ đề Đại dương sâu",
-        description: "Đắm mình trong không gian biển cả huyền bí",
-        duration: 3000,
-      });
     }
   }, [playSound, setTheme, isStarryNight, activateStarryNight, applyThemeClass, toast]);
 
