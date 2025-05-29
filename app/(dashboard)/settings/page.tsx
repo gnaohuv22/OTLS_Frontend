@@ -78,8 +78,34 @@ const THEMES = [
     className: "bg-gray-900 border-green-400 text-green-400 font-mono",
     preview: "linear-gradient(135deg, #1e1e1e 0%, #0d1117 100%)",
     type: "dark"
+  },
+  {
+    value: "vietnamese-heritage",
+    name: "Di sản Việt Nam",
+    description: "Văn hóa truyền thống",
+    icon: SparklesIcon,
+    className: "bg-amber-50 border-amber-200 text-amber-900",
+    preview: "linear-gradient(135deg, #fefbe9 0%, #f8d89f 100%)",
+    type: "light"
+  },
+  {
+    value: "deep-ocean",
+    name: "Đại dương sâu",
+    description: "Khám phá biển xanh",
+    icon: MountainIcon,
+    className: "bg-blue-950 border-blue-700 text-blue-100",
+    preview: "linear-gradient(135deg, #0c2941 0%, #082032 50%, #061621 100%)",
+    type: "dark"
   }
 ];
+
+// Khai báo interface cho bubble để sử dụng trong Deep Ocean theme
+interface Bubble {
+  id: string;
+  size: number;
+  duration: number;
+  x: number;
+}
 
 export default function SettingsPage() {
   const { toast } = useToast();
@@ -108,6 +134,11 @@ export default function SettingsPage() {
   // Enhanced UX states
   const [previewTheme, setPreviewTheme] = useState<string | null>(null);
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
+
+  // State cho Deep Ocean theme
+  const [bubbles, setBubbles] = useState<Bubble[]>([]);
+  const bubblesRef = useRef<Bubble[]>([]);
+  const bubbleIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Play sound effect function
   const playSound = useCallback((type: 'click' | 'success' | 'easter' | 'switch' | 'konami' | 'unlock') => {
@@ -183,6 +214,122 @@ export default function SettingsPage() {
     }
   }, [soundEffects, animationsEnabled]);
 
+  // Function to create ocean bubbles
+  const createBubbles = useCallback(() => {
+    if (!animationsEnabled) return;
+    
+    // Clear any existing bubbles first
+    const existingBubbles = document.querySelectorAll('.bubble');
+    existingBubbles.forEach(bubble => bubble.remove());
+    
+    // Clear existing interval
+    if (bubbleIntervalRef.current) {
+      clearInterval(bubbleIntervalRef.current);
+      bubbleIntervalRef.current = null;
+    }
+    
+    // Initialize bubbles array
+    const newBubbles: Bubble[] = [];
+    for (let i = 0; i < 15; i++) {
+      newBubbles.push({
+        id: `bubble-${i}`,
+        size: Math.random() * 20 + 5, // 5-25px
+        duration: Math.random() * 10 + 10, // 10-20s
+        x: Math.random() * 100 // 0-100% of viewport width
+      });
+    }
+    
+    bubblesRef.current = newBubbles;
+    setBubbles(newBubbles);
+    
+    // Create and append bubble elements
+    newBubbles.forEach(bubble => {
+      const bubbleEl = document.createElement('div');
+      bubbleEl.className = 'bubble';
+      bubbleEl.id = bubble.id;
+      bubbleEl.style.width = `${bubble.size}px`;
+      bubbleEl.style.height = `${bubble.size}px`;
+      bubbleEl.style.left = `${bubble.x}%`;
+      bubbleEl.style.bottom = `-${bubble.size}px`;
+      bubbleEl.style.animationDuration = `${bubble.duration}s`;
+      document.body.appendChild(bubbleEl);
+    });
+    
+    // Set interval to continuously create new bubbles
+    bubbleIntervalRef.current = setInterval(() => {
+      if (document.documentElement.classList.contains('deep-ocean')) {
+        const newBubble = {
+          id: `bubble-${Date.now()}`,
+          size: Math.random() * 20 + 5,
+          duration: Math.random() * 10 + 10,
+          x: Math.random() * 100
+        };
+        
+        const bubbleEl = document.createElement('div');
+        bubbleEl.className = 'bubble';
+        bubbleEl.id = newBubble.id;
+        bubbleEl.style.width = `${newBubble.size}px`;
+        bubbleEl.style.height = `${newBubble.size}px`;
+        bubbleEl.style.left = `${newBubble.x}%`;
+        bubbleEl.style.bottom = `-${newBubble.size}px`;
+        bubbleEl.style.animationDuration = `${newBubble.duration}s`;
+        document.body.appendChild(bubbleEl);
+        
+        // Remove bubble after animation completes
+        setTimeout(() => {
+          if (bubbleEl.parentNode) {
+            bubbleEl.parentNode.removeChild(bubbleEl);
+          }
+        }, newBubble.duration * 1000);
+      }
+    }, 2000);
+    
+  }, [animationsEnabled]);
+
+  // Clean up bubbles when theme changes
+  const cleanupBubbles = useCallback(() => {
+    if (bubbleIntervalRef.current) {
+      clearInterval(bubbleIntervalRef.current);
+      bubbleIntervalRef.current = null;
+    }
+    
+    const bubbles = document.querySelectorAll('.bubble');
+    bubbles.forEach(bubble => {
+      if (bubble.parentNode) {
+        bubble.parentNode.removeChild(bubble);
+      }
+    });
+  }, []);
+
+  // Setup Vietnamese Heritage theme effects
+  const setupVietnameseHeritage = useCallback(() => {
+    // Add page container for theme decorations if it doesn't exist
+    if (!document.querySelector('.page-container')) {
+      const pageContainer = document.createElement('div');
+      pageContainer.className = 'page-container';
+      
+      // Wrap all content in the main container
+      const appContent = document.querySelector('main');
+      if (appContent && appContent.parentNode) {
+        appContent.parentNode.insertBefore(pageContainer, appContent);
+        pageContainer.appendChild(appContent);
+      }
+    }
+  }, []);
+
+  // Cleanup Vietnamese Heritage theme effects
+  const cleanupVietnameseHeritage = useCallback(() => {
+    // Remove page container if it exists
+    const pageContainer = document.querySelector('.page-container');
+    if (pageContainer && pageContainer.parentNode) {
+      const appContent = pageContainer.querySelector('main');
+      if (appContent && pageContainer.parentNode) {
+        pageContainer.parentNode.insertBefore(appContent, pageContainer);
+        pageContainer.parentNode.removeChild(pageContainer);
+      }
+    }
+  }, []);
+
   // Load preferences from localStorage on mount
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -232,11 +379,18 @@ export default function SettingsPage() {
     }
   }, []);
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      cleanupBubbles();
+    };
+  }, [cleanupBubbles]);
+
   // Function to remove all theme classes from document
   const removeAllThemeClasses = useCallback(() => {
     const themeClasses = [
       'light', 'dark', 'dusk', 'cyberpunk-neon', 'minimal-glacier', 
-      'forest-zen', 'mono-code', 'starry-night'
+      'forest-zen', 'mono-code', 'starry-night', 'vietnamese-heritage', 'deep-ocean'
     ];
     
     themeClasses.forEach(themeClass => {
@@ -253,6 +407,19 @@ export default function SettingsPage() {
     
     // Remove all existing theme classes first
     removeAllThemeClasses();
+    
+    // Handle special case for deep ocean theme
+    if (themeValue === 'deep-ocean') {
+      cleanupBubbles();
+      cleanupVietnameseHeritage();
+      setTimeout(() => createBubbles(), 100);
+    } else if (themeValue === 'vietnamese-heritage') {
+      cleanupBubbles();
+      setTimeout(() => setupVietnameseHeritage(), 100);
+    } else {
+      cleanupBubbles();
+      cleanupVietnameseHeritage();
+    }
     
     // Small delay to ensure clean state before applying new theme
     setTimeout(() => {
@@ -271,7 +438,7 @@ export default function SettingsPage() {
         }, 200);
       }, 100);
     }, 50);
-  }, [removeAllThemeClasses]);
+  }, [removeAllThemeClasses, cleanupBubbles, createBubbles, setupVietnameseHeritage, cleanupVietnameseHeritage]);
 
   // Unlock Starry Night theme
   const unlockStarryNight = useCallback(() => {
@@ -399,7 +566,22 @@ export default function SettingsPage() {
     setTheme(value);
     applyThemeClass(value);
     playSound('switch');
-  }, [playSound, setTheme, isStarryNight, activateStarryNight, applyThemeClass]);
+
+    // Special notifications for new themes
+    if (value === 'vietnamese-heritage') {
+      toast({
+        title: "🇻🇳 Đã kích hoạt chủ đề Di sản Việt Nam",
+        description: "Cảm nhận vẻ đẹp truyền thống trong không gian hiện đại",
+        duration: 3000,
+      });
+    } else if (value === 'deep-ocean') {
+      toast({
+        title: "🌊 Đã kích hoạt chủ đề Đại dương sâu",
+        description: "Đắm mình trong không gian biển cả huyền bí",
+        duration: 3000,
+      });
+    }
+  }, [playSound, setTheme, isStarryNight, activateStarryNight, applyThemeClass, toast]);
 
   // Effect to handle theme class application when theme changes
   useEffect(() => {
@@ -416,6 +598,13 @@ export default function SettingsPage() {
         applyThemeClass("starry-night");
       } else {
         applyThemeClass(theme);
+        
+        // Initialize theme-specific effects
+        if (theme === 'deep-ocean') {
+          setTimeout(() => createBubbles(), 500);
+        } else if (theme === 'vietnamese-heritage') {
+          setTimeout(() => setupVietnameseHeritage(), 500);
+        }
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -584,6 +773,10 @@ export default function SettingsPage() {
     setTheme("light");
     applyThemeClass("light");
 
+    // Cleanup any theme-specific effects
+    cleanupBubbles();
+    cleanupVietnameseHeritage();
+
     // Reset font size
     setFontSize("normal");
     localStorage.setItem("otls_font_size", "normal");
@@ -633,7 +826,23 @@ export default function SettingsPage() {
       title: "Đã khôi phục cài đặt mặc định",
       description: "Tất cả cài đặt đã được đặt lại về giá trị mặc định.",
     });
-  }, [setTheme, setFontSize, setHighContrast, setAnimationsEnabled, setAutoSave, setNotificationsEnabled, setColorblindMode, setSoundEffects, setIsStarryNight, setSystemClickCount, playSound, toast, applyThemeClass]);
+  }, [
+    setTheme, 
+    applyThemeClass, 
+    cleanupBubbles, 
+    cleanupVietnameseHeritage, 
+    setFontSize, 
+    setHighContrast, 
+    setAnimationsEnabled, 
+    setAutoSave, 
+    setNotificationsEnabled, 
+    setColorblindMode, 
+    setSoundEffects, 
+    setIsStarryNight, 
+    setSystemClickCount, 
+    playSound, 
+    toast
+  ]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -667,6 +876,14 @@ export default function SettingsPage() {
           case '7':
             event.preventDefault();
             handleThemeChange("mono-code");
+            break;
+          case '8':
+            event.preventDefault();
+            handleThemeChange("vietnamese-heritage");
+            break;
+          case '9':
+            event.preventDefault();
+            handleThemeChange("deep-ocean");
             break;
           case 'k':
             event.preventDefault();
@@ -733,6 +950,8 @@ export default function SettingsPage() {
                 <div><kbd className="px-2 py-1 bg-muted rounded text-xs">Ctrl+5</kbd> - Băng tuyết</div>
                 <div><kbd className="px-2 py-1 bg-muted rounded text-xs">Ctrl+6</kbd> - Rừng thiền</div>
                 <div><kbd className="px-2 py-1 bg-muted rounded text-xs">Ctrl+7</kbd> - Mono Code</div>
+                <div><kbd className="px-2 py-1 bg-muted rounded text-xs">Ctrl+8</kbd> - Di sản Việt Nam</div>
+                <div><kbd className="px-2 py-1 bg-muted rounded text-xs">Ctrl+9</kbd> - Đại dương sâu</div>
                 <div><kbd className="px-2 py-1 bg-muted rounded text-xs">Ctrl+K</kbd> - Hiện/ẩn phím tắt</div>
                 <div><kbd className="px-2 py-1 bg-muted rounded text-xs">Ctrl+S</kbd> - Lưu tất cả</div>
                 <div><kbd className="px-2 py-1 bg-muted rounded text-xs">Ctrl+R</kbd> - Reset tất cả</div>

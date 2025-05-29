@@ -546,6 +546,237 @@
     100% { transform: translateY(4px); }
   }
 
+  /* 🇻🇳 VIETNAMESE HERITAGE THEME */
+  .vietnamese-heritage {
+    --background: 30 40% 95%;
+    --foreground: 30 50% 10%;
+    --card: 30 40% 97%;
+    --card-foreground: 30 50% 10%;
+    --popover: 30 40% 97%;
+    --popover-foreground: 30 50% 10%;
+    --primary: 30 90% 45%;
+    --primary-foreground: 30 40% 98%;
+    --secondary: 30 20% 85%;
+    --secondary-foreground: 30 50% 10%;
+    --muted: 30 20% 90%;
+    --muted-foreground: 30 50% 40%;
+    --accent: 30 20% 85%;
+    --accent-foreground: 30 50% 10%;
+    --destructive: 0 85% 60%;
+    --destructive-foreground: 30 40% 98%;
+    --border: 30 30% 80%;
+    --input: 30 20% 90%;
+    --ring: 30 90% 45%;
+  }
+
+  /* 🇻🇳 VIETNAMESE HERITAGE BRONZE EFFECTS */
+  .vietnamese-heritage::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+      radial-gradient(circle at 50% 70%, rgba(180, 120, 40, 0.1) 0%, transparent 70%),
+      radial-gradient(circle at 80% 10%, rgba(210, 170, 100, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  .vietnamese-heritage::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('/DongSonBronzeDrum.svg');
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: contain;
+    opacity: 0.15;
+    pointer-events: none;
+    z-index: -1;
+    animation: bronzeDrumPulse 15s ease-in-out infinite;
+    filter: sepia(30%) hue-rotate(355deg);
+  }
+
+  /* Đặc biệt: Thêm hiệu ứng "lộc bình" kiểu cổ truyền ở 4 góc */
+  .vietnamese-heritage .page-container {
+    position: relative;
+  }
+
+  .vietnamese-heritage .page-container::before,
+  .vietnamese-heritage .page-container::after {
+    content: "";
+    position: fixed;
+    width: 100px;
+    height: 100px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='rgba(180, 120, 40, 0.2)' stroke-width='1'%3E%3Cpath d='M20,80 Q30,60 50,50 Q70,60 80,80'/%3E%3Cpath d='M30,30 Q40,40 50,30 Q60,40 70,30'/%3E%3Cpath d='M50,30 L50,80'/%3E%3Cpath d='M30,70 Q40,60 50,70 Q60,60 70,70'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: contain;
+    opacity: 0.25;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .vietnamese-heritage .page-container::before {
+    top: 20px;
+    left: 20px;
+    transform: rotate(-15deg);
+  }
+
+  .vietnamese-heritage .page-container::after {
+    top: 20px;
+    right: 20px;
+    transform: rotate(15deg);
+  }
+
+  /* Thêm hiệu ứng grain mịn để mô phỏng chất liệu cổ */
+  .vietnamese-heritage::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+      radial-gradient(circle at 50% 70%, rgba(180, 120, 40, 0.1) 0%, transparent 70%),
+      radial-gradient(circle at 80% 10%, rgba(210, 170, 100, 0.1) 0%, transparent 50%),
+      url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  @keyframes bronzeDrumPulse {
+    0% { opacity: 0.08; transform: scale(0.98); filter: sepia(30%) hue-rotate(355deg) brightness(0.95); }
+    50% { opacity: 0.15; transform: scale(1); filter: sepia(30%) hue-rotate(355deg) brightness(1.05); }
+    100% { opacity: 0.08; transform: scale(0.98); filter: sepia(30%) hue-rotate(355deg) brightness(0.95); }
+  }
+
+  /* Dark mode for Vietnamese Heritage */
+  .dark.vietnamese-heritage {
+    --background: 30 40% 15%;
+    --foreground: 30 30% 90%;
+    --card: 30 40% 18%;
+    --card-foreground: 30 30% 90%;
+    --popover: 30 40% 18%;
+    --popover-foreground: 30 30% 90%;
+    --primary: 30 90% 50%;
+    --primary-foreground: 30 40% 10%;
+    --secondary: 30 30% 25%;
+    --secondary-foreground: 30 30% 90%;
+    --muted: 30 30% 22%;
+    --muted-foreground: 30 20% 70%;
+    --accent: 30 30% 25%;
+    --accent-foreground: 30 30% 90%;
+    --destructive: 0 85% 60%;
+    --destructive-foreground: 30 30% 90%;
+    --border: 30 30% 30%;
+    --input: 30 30% 22%;
+    --ring: 30 90% 50%;
+  }
+
+  .dark.vietnamese-heritage::before {
+    background: 
+      radial-gradient(circle at 50% 70%, rgba(210, 170, 100, 0.15) 0%, transparent 70%),
+      radial-gradient(circle at 80% 10%, rgba(180, 120, 40, 0.1) 0%, transparent 50%),
+      url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E");
+  }
+
+  .dark.vietnamese-heritage::after {
+    background-image: url('/DongSonBronzeDrum.svg');
+    opacity: 0.25;
+    filter: sepia(20%) hue-rotate(340deg) brightness(1.2);
+  }
+
+  .dark.vietnamese-heritage .page-container::before,
+  .dark.vietnamese-heritage .page-container::after {
+    opacity: 0.35;
+    filter: brightness(1.2);
+  }
+
+  /* 🌊 DEEP OCEAN THEME */
+  .deep-ocean {
+    --background: 210 70% 8%;
+    --foreground: 195 40% 90%;
+    --card: 210 70% 10%;
+    --card-foreground: 195 40% 90%;
+    --popover: 210 70% 10%;
+    --popover-foreground: 195 40% 90%;
+    --primary: 195 80% 50%;
+    --primary-foreground: 210 70% 8%;
+    --secondary: 210 60% 15%;
+    --secondary-foreground: 195 40% 90%;
+    --muted: 210 60% 12%;
+    --muted-foreground: 195 30% 70%;
+    --accent: 195 80% 40%;
+    --accent-foreground: 195 40% 90%;
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 195 40% 90%;
+    --border: 210 60% 20%;
+    --input: 210 60% 12%;
+    --ring: 195 80% 50%;
+  }
+
+  /* 🌊 DEEP OCEAN WATER EFFECTS */
+  .deep-ocean::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+      linear-gradient(0deg, 
+        rgba(0, 30, 60, 0.3) 0%, 
+        rgba(0, 15, 40, 0.1) 40%, 
+        transparent 100%);
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  .deep-ocean::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 200%;
+    height: 200%;
+    background: 
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath fill='none' stroke='rgba(0, 150, 220, 0.03)' stroke-width='1' d='M0,50 Q25,30 50,50 Q75,70 100,50 M0,30 Q25,10 50,30 Q75,50 100,30 M0,70 Q25,50 50,70 Q75,90 100,70'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: -1;
+    animation: oceanWaves 20s linear infinite;
+  }
+
+  .deep-ocean .bubble {
+    position: fixed;
+    background: radial-gradient(circle at center, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.2));
+    border-radius: 50%;
+    opacity: 0.3;
+    pointer-events: none;
+    z-index: 0;
+    animation: bubbleRise linear infinite;
+  }
+
+  @keyframes oceanWaves {
+    0% { transform: translateY(0) translateX(0); }
+    50% { transform: translateY(-10px) translateX(-100px); }
+    100% { transform: translateY(0) translateX(-200px); }
+  }
+
+  @keyframes bubbleRise {
+    0% { transform: translateY(0) translateX(0); opacity: 0; }
+    20% { opacity: 0.3; }
+    80% { opacity: 0.5; }
+    100% { transform: translateY(-100vh) translateX(20px); opacity: 0; }
+  }
+
+  /* Ocean bubble animation script will be added separately */
+
   * {
     @apply border-border;
   }
