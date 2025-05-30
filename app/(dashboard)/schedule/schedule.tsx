@@ -18,11 +18,6 @@ import {
   fadeInUp,
   getUpcomingSchedules,
   mapApiSchedulesToAppSchedules,
-  // Các hàm cũ
-  // toVietnamTime,
-  // formatDateToVNString,
-  // processApiHoliday,
-  // isDateInHolidayRange
 } from '@/components/schedule';
 
 // Import các hàm tiện ích mới từ date-utils
@@ -32,32 +27,6 @@ import {
   processApiHoliday,
   isHoliday as isDateInHolidayPeriod
 } from '@/components/schedule/date-utils';
-
-// Thời gian cache (5 phút)
-const CACHE_DURATION = 5 * 60 * 1000;
-const SCHEDULES_CACHE_KEY = 'otls_schedule_cache';
-const LAST_FETCH_CACHE_KEY = 'otls_schedule_last_fetch';
-const HOLIDAY_CACHE_KEY = 'otls_holiday_cache';
-
-// Hàm lưu dữ liệu vào localStorage
-const saveToLocalStorage = (key: string, data: any) => {
-  try {
-    localStorage.setItem(key, JSON.stringify(data));
-  } catch (error) {
-    console.error('Lỗi khi lưu vào localStorage:', error);
-  }
-};
-
-// Hàm lấy dữ liệu từ localStorage
-const getFromLocalStorage = (key: string) => {
-  try {
-    const item = localStorage.getItem(key);
-    return item ? JSON.parse(item) : null;
-  } catch (error) {
-    console.error('Lỗi khi lấy từ localStorage:', error);
-    return null;
-  }
-};
 
 // Component chính
 export default function Schedule() {
@@ -70,11 +39,7 @@ export default function Schedule() {
   const [classSchedules, setClassSchedules] = useState<Record<string, ClassSchedule[]>>({});
   const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [lastFetchTime, setLastFetchTime] = useState<number | null>(null);
-  const [upcomingCount, setUpcomingCount] = useState<number>(() => {
-    const saved = getFromLocalStorage('otls_upcoming_count');
-    return saved || 4; // Mặc định hiển thị 4 lịch học sắp tới
-  });
+  const [upcomingCount, setUpcomingCount] = useState<number>(4); // Mặc định hiển thị 4 lịch học sắp tới
   
   // Dùng refs để lưu trữ các giá trị mà không cần trigger re-render khi chúng thay đổi
   const holidaysProcessed = useRef(false);
@@ -88,56 +53,12 @@ export default function Schedule() {
     schedulesRef.current = classSchedules;
   }, [classSchedules]);
 
-  // Lưu số lượng lịch học hiển thị khi thay đổi
-  useEffect(() => {
-    saveToLocalStorage('otls_upcoming_count', upcomingCount);
-  }, [upcomingCount]);
-
-  // Load cached data on initial render
-  useEffect(() => {
-    // Load cached schedules if available
-    const cachedSchedules = getFromLocalStorage(SCHEDULES_CACHE_KEY);
-    if (cachedSchedules) {
-      setClassSchedules(cachedSchedules);
-    }
-
-    // Load last fetch time if available
-    const cachedLastFetch = getFromLocalStorage(LAST_FETCH_CACHE_KEY);
-    if (cachedLastFetch) {
-      setLastFetchTime(cachedLastFetch);
-    }
-
-    // Load cached holidays if available
-    const cachedHolidays = getFromLocalStorage(HOLIDAY_CACHE_KEY);
-    if (cachedHolidays) {
-      setHolidays(cachedHolidays);
-      holidaysProcessed.current = true;
-    }
-
-    // If we loaded valid cached data, we're not loading anymore
-    if (cachedSchedules && Object.keys(cachedSchedules).length > 0) {
-      setIsLoading(false);
-    }
-  }, []);
-
-  // Fetch lớp học và lịch học với caching
+  // Fetch lớp học và lịch học
   const fetchClassroomsAndSchedules = useCallback(async () => {
     // Prevent concurrent fetches
     if (isFetchingRef.current) return;
     
     try {
-      // Kiểm tra nếu dữ liệu đã được cache và vẫn còn hiệu lực
-      const now = Date.now();
-      if (
-        lastFetchTime && 
-        now - lastFetchTime < CACHE_DURATION && 
-        Object.keys(schedulesRef.current).length > 0
-      ) {
-        // Dữ liệu được cache và vẫn còn hiệu lực
-        console.log('Sử dụng dữ liệu từ cache');
-        return;
-      }
-
       // Set loading and fetching flags
       setIsLoading(true);
       isFetchingRef.current = true;
@@ -191,22 +112,9 @@ export default function Schedule() {
           }
         });
         
-        // Cập nhật state và cache
+        // Cập nhật state
         setClassSchedules(schedulesMap);
-        saveToLocalStorage(SCHEDULES_CACHE_KEY, schedulesMap);
       }
-      
-      // Use a ref to store the current time before updating state
-      // This prevents triggering another fetch because of state update
-      const currentTime = Date.now();
-      setLastFetchTime(prevTime => {
-        // Only update if it's actually newer
-        if (!prevTime || currentTime > prevTime) {
-          saveToLocalStorage(LAST_FETCH_CACHE_KEY, currentTime);
-          return currentTime;
-        }
-        return prevTime;
-      });
     } catch (error: any) {
       if (error.status === 404) {
         setClassrooms([]);
@@ -214,7 +122,7 @@ export default function Schedule() {
       } else {
         toast({
           title: "Lỗi",
-        description: "Không thể tải dữ liệu lịch học. Vui lòng thử lại sau.",
+          description: "Không thể tải dữ liệu lịch học. Vui lòng thử lại sau.",
           variant: "destructive"
         });
       }
@@ -222,20 +130,11 @@ export default function Schedule() {
       setIsLoading(false);
       isFetchingRef.current = false;
     }
-  }, [role, userData, toast, lastFetchTime]);
+  }, [role, userData, toast]);
   
-  // Fetch lớp học và lịch học
+  // Fetch lớp học và lịch học khi component mount
   useEffect(() => {
     fetchClassroomsAndSchedules();
-
-    // Tạo interval để tự động làm mới dữ liệu
-    const refreshInterval = setInterval(() => {
-      if (document.visibilityState === 'visible' && !isFetchingRef.current) {
-        fetchClassroomsAndSchedules();
-      }
-    }, CACHE_DURATION); // Cập nhật sau mỗi khoảng thời gian cache
-
-    return () => clearInterval(refreshInterval);
   }, [fetchClassroomsAndSchedules]);
 
   // Fetch dữ liệu ngày lễ
@@ -259,18 +158,14 @@ export default function Schedule() {
       });
       
       setHolidays(formattedHolidays);
-      saveToLocalStorage(HOLIDAY_CACHE_KEY, formattedHolidays);
     } catch (error) {
       console.error('Lỗi khi lấy dữ liệu ngày lễ:', error);
     }
   }, []);
 
   useEffect(() => {
-    // Chỉ gọi fetchHolidays nếu chưa có dữ liệu trong cache
-    if (holidays.length === 0) {
-      fetchHolidays();
-    }
-  }, [fetchHolidays, holidays.length]);
+    fetchHolidays();
+  }, [fetchHolidays]);
 
   // Thêm ngày lễ vào danh sách lịch học để hiển thị
   useEffect(() => {
@@ -453,10 +348,8 @@ export default function Schedule() {
 
   // Hàm refresh lịch học thủ công
   const refreshSchedules = useCallback(() => {
-    // Reset lastFetchTime để buộc fetch lại data
-    setLastFetchTime(null);
-    saveToLocalStorage(LAST_FETCH_CACHE_KEY, null);
-  }, []);
+    fetchClassroomsAndSchedules();
+  }, [fetchClassroomsAndSchedules]);
 
   // Xử lý thay đổi số lượng lịch học hiển thị
   const handleUpcomingCountChange = useCallback((value: string) => {
