@@ -1,26 +1,31 @@
 // Common types
-export type UserRole = 'Teacher' | 'Student' | 'Parent' | 'Admin' | null;
+export type UserRole = 'Teacher' | 'Student' | 'Parent' | 'Admin' | null | undefined;
 
 // Class related types
 export interface ClassDetail {
   id: string;
-  name: string;
-  subject: string;
-  teacher: string;
-  schedule: string;
-  time: string;
-  totalStudents: number;
-  currentUnit: string;
-  nextClass: string;
-  status: string;
-  description: string;
-  announcements: Announcement[];
-  assignments: Assignment[];
-  materials: Material[];
-  students: Student[];
-  isOnlineMeetingActive: boolean;
-  meetingId: string;
   classroomId: string;
+  name: string;
+  description: string;
+  subject?: string;
+  schedule?: string;
+  time?: string;
+  grade?: string;
+  teacher?: string;
+  teacherId?: string;
+  students?: Student[] | any[];
+  totalStudents?: number;
+  status?: 'active' | 'inactive';
+  startDate?: string; // Ngày bắt đầu lớp học
+  endDate?: string | null; // Ngày kết thúc lớp học (nullable)
+  userId?: string; // ID của giáo viên quản lý lớp
+  isOnlineMeeting?: 'Active' | 'Inactive'; // Trạng thái meeting
+  isOnlineMeetingActive?: boolean; // Trạng thái active của meeting
+  meetingId?: string;
+  nextClass?: string; // Thời gian buổi học tiếp theo
+  announcements?: Announcement[];
+  assignments?: Assignment[];
+  materials?: Material[];
 }
 
 // Announcement related types (Updated for API compatibility)
@@ -223,22 +228,22 @@ export interface UserMentionProps {
 // Tab component props (Updated)
 export interface AnnouncementsTabProps {
   classDetail: ClassDetail;
-  role: UserRole;
-  userData: UserData;
-  formatDate: (dateString: string) => string;
+  role?: UserRole;
+  userData?: UserData;
+  formatDate?: (dateString: string) => string;
   teacher?: {
     id: string;
     name: string;
     avatar?: string | null;
     email?: string;
-  }; // For teacher tagging
+  };
 }
 
 export interface AssignmentsTabProps {
   classDetail: ClassDetail;
-  role: UserRole;
-  formatDate: (dateString: string) => string;
-  classId: string | string[];
+  role?: UserRole;
+  formatDate?: (dateString: string) => string;
+  classId?: string;
 }
 
 export interface OnlineMeetingTabProps {
@@ -269,7 +274,6 @@ export interface AnalyticsTabProps {
 export interface SettingsTabProps {
   classDetail: ClassDetail;
   openEditClassModal: () => void;
-  role?: UserRole;
 }
 
 export interface EditClassModalProps {
@@ -325,5 +329,40 @@ export interface ScheduleModalProps {
     time: string;
     meetingLink: string;
   }) => void;
+  handleSaveSchedule: () => void;
+}
+
+export interface OverviewTabProps {
+  classDetail: ClassDetail;
+  role?: UserRole;
+}
+
+export interface MembersTabProps {
+  classDetail: ClassDetail;
+  role?: UserRole;
+}
+
+export interface ScheduleTabProps {
+  classDetail: ClassDetail;
+  role?: UserRole;
+}
+
+export interface ResourcesTabProps {
+  classDetail: ClassDetail;
+  role?: UserRole;
+}
+
+export interface EditScheduleModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (schedule: any) => void;
+  existingSchedule?: any;
+  error?: string;
+}
+
+export interface ScheduleFormProps {
+  schedule: any;
+  setSchedule: React.Dispatch<React.SetStateAction<any>>;
+  handleAddSchedule: () => void;
   handleSaveSchedule: () => void;
 } 

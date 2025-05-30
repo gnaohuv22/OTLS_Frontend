@@ -411,12 +411,14 @@ export const ClassroomService = {
    */
   updateClassroom: async (classroomData: UpdateClassroomRequest): Promise<Classroom> => {
     try {
-      // Gửi các trường được phép cập nhật, bao gồm cả userId
+      // Gửi các trường được phép cập nhật, bao gồm cả userId và endDate
       const requestData = {
         classroomId: classroomData.classroomId,
         name: classroomData.name,
         description: classroomData.description,
-        userId: classroomData.userId
+        userId: classroomData.userId,
+        startDate: classroomData.startDate,
+        endDate: classroomData.endDate // Thêm endDate vào request
       };
       
       console.log('Dữ liệu gửi đi từ service updateClassroom:', JSON.stringify(requestData));

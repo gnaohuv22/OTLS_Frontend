@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PlusCircle, Trash2 } from 'lucide-react';
+import { PlusCircle, Trash2, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
@@ -35,6 +35,7 @@ import { useAuth } from '@/lib/auth-context';
 import { ClassDetail } from '../types';
 import { DebounceInput } from '@/components/ui/debounce-input';
 import { DebounceTextarea } from '@/components/ui/debounce-textarea';
+import { format, parseISO } from 'date-fns';
 
 // Interface cho lịch học
 interface ScheduleItem {
@@ -75,6 +76,7 @@ export interface ClassFormModalProps {
   classDetail?: ClassDetail;
   rawSchedules?: ClassSchedule[];
   mode: 'create' | 'edit';
+  isSubmitting?: boolean;
 }
 
 function ClassFormModalComponent({
@@ -83,11 +85,13 @@ function ClassFormModalComponent({
   onSubmitClass,
   classDetail,
   rawSchedules,
-  mode = 'create'
+  mode = 'create',
+  isSubmitting: externalIsSubmitting
 }: ClassFormModalProps) {
   const { toast } = useToast();
   const { userData } = useAuth();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLocalSubmitting, setIsLocalSubmitting] = useState(false);
+  const isSubmitting = externalIsSubmitting !== undefined ? externalIsSubmitting : isLocalSubmitting;
   const [subjects, setSubjects] = useState<SubjectDTO[]>([]);
   const [isLoadingSubjects, setIsLoadingSubjects] = useState(false);
   
@@ -98,6 +102,8 @@ function ClassFormModalComponent({
   const [classSchedules, setClassSchedules] = useState<ScheduleItem[]>([
     { id: crypto.randomUUID(), dayOfWeek: 1, startTime: '08:00', endTime: '09:30', isNew: true }
   ]);
+  // Thêm state cho endDate
+  const [endDate, setEndDate] = useState<string | undefined>(undefined);
 
   // Load subjects from API
   useEffect(() => {
@@ -127,11 +133,14 @@ function ClassFormModalComponent({
   useEffect(() => {
     if (mode === 'edit' && classDetail) {
       setClassName(classDetail.name);
-      setClassSubject(classDetail.subject);
-      
+      setClassSubject(classDetail.subject || '');
+
       // Extract description (exclude the subject line)
       const descLines = classDetail.description?.split('\n').filter(line => !line.startsWith('Môn học:'));
       setClassDesc(descLines ? descLines.join('\n').trim() : '');
+      
+      // Set endDate if available
+      setEndDate(classDetail.endDate || undefined);
       
       // Use raw schedule data instead of parsing formatted strings
       if (rawSchedules && rawSchedules.length > 0) {
@@ -239,6 +248,34 @@ function ClassFormModalComponent({
     return hours * 60 + minutes;
   };
 
+  // Cập nhật startDate để xử lý thời gian đúng khi so sánh
+  const isEndDateValid = () => {
+    if (!endDate) return true; // Không có endDate là hợp lệ
+    
+    const startDateToCompare = classDetail?.startDate 
+      ? classDetail.startDate 
+      : new Date().toISOString().split('T')[0];
+
+    return endDate > startDateToCompare;
+  };
+
+  // Xử lý thay đổi endDate từ input date
+  const handleEndDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.value) {
+      const date = new Date(e.target.value);
+      date.setUTCHours(0, 0, 0, 0); // Set time to 02:00:00 UTC
+      setEndDate(date.toISOString());
+    } else {
+      setEndDate(undefined);
+    }
+  };
+
+  // Định dạng endDate để hiển thị trong input date
+  const formatEndDateForInput = () => {
+    if (!endDate) return '';
+    return endDate.split('T')[0]; // Lấy phần YYYY-MM-DD từ chuỗi ISO
+  }
+
   // Reset form
   const resetForm = () => {
     setClassName('');
@@ -247,7 +284,8 @@ function ClassFormModalComponent({
       { id: crypto.randomUUID(), dayOfWeek: 1, startTime: '08:00', endTime: '09:30', isNew: true }
     ]);
     setClassDesc('');
-    setIsSubmitting(false);
+    setEndDate(undefined);
+    setIsLocalSubmitting(false);
   };
 
   // Xử lý đóng form
@@ -258,36 +296,116 @@ function ClassFormModalComponent({
     onOpenChange(false);
   };
 
-  // Lưu hoặc cập nhật lịch học
+  // Lưu hoặc cập nhật lịch học - tối ưu để không xóa hết rồi tạo lại
   const saveSchedules = async (classroomId: string, isEdit: boolean = false) => {
     try {
-      const savedSchedules: ClassSchedule[] = [];
-      
-      // Nếu đang edit, xóa tất cả lịch cũ và tạo lịch mới
-      if (isEdit) {
-        // Get existing schedules
-        const existingSchedules = await ClassroomService.getSchedulesByClassroomId(classroomId);
+      // Nếu đang tạo mới lớp học, chỉ cần thêm tất cả lịch học
+      if (!isEdit) {
+        const savedSchedules: ClassSchedule[] = [];
         
-        // Delete all existing schedules
-        for (const schedule of existingSchedules) {
-          await ClassroomService.deleteClassSchedule(schedule.classScheduleId);
+        // Thêm từng lịch học mới
+        for (const schedule of classSchedules) {
+          const scheduleData: AddClassScheduleRequest = {
+            dayOfWeek: schedule.dayOfWeek,
+            startTime: schedule.startTime + ':00',
+            endTime: schedule.endTime + ':00',
+            classroomId: classroomId
+          };
+          
+          const savedSchedule = await ClassroomService.addClassSchedule(scheduleData);
+          savedSchedules.push(savedSchedule);
         }
+        
+        return savedSchedules;
       }
       
-      // Lưu từng lịch học
-      for (const schedule of classSchedules) {
-        const scheduleData: AddClassScheduleRequest = {
-          dayOfWeek: schedule.dayOfWeek,
-          startTime: schedule.startTime + ':00',
-          endTime: schedule.endTime + ':00',
+      // Nếu đang chỉnh sửa, thực hiện so sánh và chỉ cập nhật những thay đổi
+      // Lấy danh sách lịch học hiện tại
+      const existingSchedules = await ClassroomService.getSchedulesByClassroomId(classroomId);
+      
+      // Danh sách lịch học cuối cùng để trả về
+      let finalSchedules: ClassSchedule[] = [];
+      
+      // Phân loại các lịch học thành: cần thêm mới, cần xóa, cần cập nhật
+      
+      // 1. Xác định các lịch học cần xóa (có trong existingSchedules nhưng không có trong classSchedules)
+      const schedulesToDelete = existingSchedules.filter(existing => {
+        // Không tìm thấy lịch tương ứng trong lịch mới
+        return !classSchedules.some(newSchedule => {
+          // Nếu newSchedule có classScheduleId (trường hợp đã lưu trước đó)
+          if ('classScheduleId' in newSchedule) {
+            return newSchedule.classScheduleId === existing.classScheduleId;
+          }
+          
+          // Với lịch mới, kiểm tra trùng khớp về ngày và giờ
+          return (
+            newSchedule.dayOfWeek === existing.dayOfWeek &&
+            newSchedule.startTime + ':00' === existing.startTime && 
+            newSchedule.endTime + ':00' === existing.endTime
+          );
+        });
+      });
+      
+      // 2. Xóa các lịch không còn sử dụng
+      for (const scheduleToDelete of schedulesToDelete) {
+        await ClassroomService.deleteClassSchedule(scheduleToDelete.classScheduleId);
+      }
+      
+      // 3. Xử lý từng lịch trong danh sách mới
+      for (const newSchedule of classSchedules) {
+        // Chuẩn bị dữ liệu chung
+        const scheduleData = {
+          dayOfWeek: newSchedule.dayOfWeek,
+          startTime: newSchedule.startTime + ':00',
+          endTime: newSchedule.endTime + ':00',
           classroomId: classroomId
         };
         
-        const savedSchedule = await ClassroomService.addClassSchedule(scheduleData);
-        savedSchedules.push(savedSchedule);
+        // Trường hợp 1: Lịch đã tồn tại và cần cập nhật
+        if ('classScheduleId' in newSchedule && typeof newSchedule.classScheduleId === 'string') {
+          // Tìm lịch tương ứng trong existingSchedules
+          const existingSchedule = existingSchedules.find(
+            s => s.classScheduleId === newSchedule.classScheduleId
+          );
+          
+          // Nếu tìm thấy và có sự thay đổi, cập nhật
+          if (existingSchedule && (
+            existingSchedule.dayOfWeek !== newSchedule.dayOfWeek ||
+            existingSchedule.startTime !== scheduleData.startTime ||
+            existingSchedule.endTime !== scheduleData.endTime
+          )) {
+            // Cập nhật lịch học
+            const updatedSchedule = await ClassroomService.updateClassSchedule({
+              ...scheduleData,
+              classScheduleId: newSchedule.classScheduleId
+            });
+            finalSchedules.push(updatedSchedule);
+          } else if (existingSchedule) {
+            // Không có thay đổi, giữ nguyên
+            finalSchedules.push(existingSchedule);
+          }
+        } 
+        // Trường hợp 2: Lịch mới hoàn toàn, cần thêm
+        else {
+          // Kiểm tra xem lịch này đã tồn tại về mặt nội dung chưa (trùng ngày và giờ)
+          const existingMatch = existingSchedules.find(
+            s => s.dayOfWeek === scheduleData.dayOfWeek && 
+                s.startTime === scheduleData.startTime && 
+                s.endTime === scheduleData.endTime
+          );
+          
+          if (existingMatch) {
+            // Lịch đã tồn tại về mặt nội dung, không cần thêm
+            finalSchedules.push(existingMatch);
+          } else {
+            // Lịch hoàn toàn mới, thêm vào
+            const savedSchedule = await ClassroomService.addClassSchedule(scheduleData);
+            finalSchedules.push(savedSchedule);
+          }
+        }
       }
       
-      return savedSchedules;
+      return finalSchedules;
     } catch (error: any) {
       console.error('Lỗi khi lưu lịch học:', error);
       throw new Error('Không thể lưu lịch học. ' + error.message);
@@ -338,6 +456,16 @@ function ClassFormModalComponent({
       return false;
     }
 
+    // Kiểm tra ngày kết thúc
+    if (endDate && !isEndDateValid()) {
+      toast({
+        variant: 'destructive',
+        title: 'Ngày kết thúc không hợp lệ',
+        description: 'Ngày kết thúc phải sau ngày bắt đầu lớp học.',
+      });
+      return false;
+    }
+
     return true;
   };
 
@@ -349,7 +477,9 @@ function ClassFormModalComponent({
       return;
     }
 
-    setIsSubmitting(true);
+    if (externalIsSubmitting === undefined) {
+      setIsLocalSubmitting(true);
+    }
 
     try {
       // Tạo mô tả từ subject và description
@@ -370,8 +500,12 @@ function ClassFormModalComponent({
           name: className,
           description: fullDescription,
           userId: userData.userID,
+          startDate: new Date().toISOString(), // Sử dụng định dạng ISO đầy đủ
+          endDate: endDate,
           isOnlineMeeting: 'Inactive' // Mặc định là Inactive
         };
+
+        console.log('classroomData', classroomData);
         
         // Call API to create classroom
         responseClassroom = await ClassroomService.addClassroom(classroomData);
@@ -384,7 +518,9 @@ function ClassFormModalComponent({
           classroomId: classDetail.classroomId,
           name: className,
           description: fullDescription,
-          userId: userData.userID
+          userId: userData.userID,
+          startDate: classDetail.startDate,
+          endDate: endDate
         };
         
         // Call API to update classroom
@@ -400,6 +536,7 @@ function ClassFormModalComponent({
       const formattedData = {
         ...responseClassroom,
         subject: classSubject,
+        endDate: endDate, // Đưa endDate vào dữ liệu trả về
         schedules: savedSchedules.map(s => ({
           day: DAY_OF_WEEK_MAP[s.dayOfWeek],
           time: `${s.startTime.substring(0, 5)} - ${s.endTime.substring(0, 5)}`
@@ -428,9 +565,16 @@ function ClassFormModalComponent({
         description: error.message || `Đã xảy ra lỗi khi ${mode === 'create' ? 'tạo' : 'cập nhật'} lớp học. Vui lòng thử lại sau.`,
       });
     } finally {
-      setIsSubmitting(false);
+      if (externalIsSubmitting === undefined) {
+        setIsLocalSubmitting(false);
+      }
     }
   };
+
+  // Format startDate để hiển thị (nếu có)
+  const formattedStartDate = classDetail?.startDate 
+    ? format(parseISO(classDetail.startDate), 'dd/MM/yyyy')
+    : 'Ngày hiện tại';
 
   const dialogTitle = mode === 'create' ? 'Tạo lớp học mới' : 'Chỉnh sửa thông tin lớp học';
   const dialogDescription = mode === 'create' 
@@ -608,6 +752,58 @@ function ClassFormModalComponent({
               </AnimatePresence>
             </motion.div>
 
+            {/* Thêm trường ngày kết thúc */}
+            {mode === 'edit' && (
+              <motion.div
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.35 }}
+                className="space-y-2"
+              >
+                <div className="flex justify-between">
+                  <Label htmlFor="end-date" className="font-medium">
+                    Ngày kết thúc (tùy chọn)
+                  </Label>
+                  {endDate && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setEndDate(undefined)} 
+                      className="h-6 px-2 text-xs"
+                      disabled={isSubmitting}
+                      type="button"
+                    >
+                      Xóa
+                    </Button>
+                  )}
+                </div>
+                
+                <div className="relative flex">
+                  <Input
+                    id="end-date"
+                    type="date"
+                    value={formatEndDateForInput()}
+                    onChange={handleEndDateChange}
+                    min={classDetail?.startDate ? new Date(classDetail.startDate).toISOString().split('T')[0] : ''}
+                    className="w-full"
+                    disabled={isSubmitting}
+                  />
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                </div>
+                
+                {endDate && !isEndDateValid() && (
+                  <p className="text-sm text-destructive">
+                    Ngày kết thúc phải sau ngày bắt đầu ({formattedStartDate})
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Nếu không chọn ngày kết thúc, lớp học sẽ hoạt động vô thời hạn
+                </p>
+              </motion.div>
+            )}
+
             <motion.div
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
@@ -642,6 +838,7 @@ function ClassFormModalComponent({
               variant="outline"
               onClick={handleClose}
               className="transition-all duration-200"
+              disabled={isSubmitting}
             >
               Hủy
             </Button>

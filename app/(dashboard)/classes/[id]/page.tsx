@@ -39,17 +39,19 @@ const emptyClassDetail: ClassDetail = {
   schedule: '',
   time: '',
   totalStudents: 0,
-  currentUnit: '',
   nextClass: new Date().toISOString(),
   status: 'inactive',
   description: '',
   announcements: [], // Thông báo sẽ được quản lý bởi AnnouncementManager
   assignments: [],
   materials: [],
-  students: [],
+  students: [], // Mảng rỗng, không phải số 0
   isOnlineMeetingActive: false,
   meetingId: 'ae-minh-cu-the-thoi-he-he',
-  classroomId: ''
+  classroomId: '',
+  startDate: new Date().toISOString(),
+  endDate: null, // null thay vì chuỗi rỗng để khớp với interface
+  userId: ''
 };
 
 export default function ClassDetailPage() {
@@ -245,7 +247,18 @@ export default function ClassDetailPage() {
           classroomId: classroomData.classroomId,
           totalStudents: formattedStudents.length,
           students: formattedStudents,
+          startDate: classroomData.startDate,
+          endDate: classroomData.endDate, 
+          userId: classroomData.userId,
           isOnlineMeetingActive: classroomData.isOnlineMeeting === 'Active'
+        });
+        
+        // Log để debug
+        console.log('Class data from API:', {
+          name: classroomData.name,
+          id: classroomData.classroomId,
+          startDate: classroomData.startDate,
+          endDate: classroomData.endDate
         });
         
         // Cập nhật form chỉnh sửa

@@ -1,16 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { SettingsTabProps } from '../types';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { AlertCircle, Trash2 } from 'lucide-react';
+import { AlertCircle, Calendar, Trash2 } from 'lucide-react';
 import { UserRole } from '../types';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/use-toast';
 import { ClassroomService } from '@/lib/api/classes';
 import { useAuth } from '@/lib/auth-context';
+import { format, isValid, parseISO } from 'date-fns';
+import { Textarea } from '@/components/ui/textarea';
+import { ClassFormModal } from '../modals/class-form-modal';
 
 interface DeleteClassConfirmationProps {
   isOpen: boolean;
@@ -150,13 +153,33 @@ function LeaveClassConfirmation({ isOpen, setIsOpen, confirmText, setConfirmText
 export function SettingsTab({ classDetail, openEditClassModal, role = 'Student' }: SettingsTabProps & { role?: UserRole }) {
   const [showLeaveConfirmation, setShowLeaveConfirmation] = useState(false);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [confirmLeaveText, setConfirmLeaveText] = useState('');
   const [confirmDeleteText, setConfirmDeleteText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [classSchedules, setClassSchedules] = useState<any[]>([]);
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useAuth();
+  
+  // Lấy danh sách lịch học của lớp khi mở modal chỉnh sửa
+  useEffect(() => {
+    const fetchClassSchedules = async () => {
+      if (showEditModal && classDetail.classroomId) {
+        try {
+          const schedules = await ClassroomService.getSchedulesByClassroomId(classDetail.classroomId);
+          setClassSchedules(schedules);
+        } catch (error) {
+          console.error('Lỗi khi lấy lịch học của lớp:', error);
+          setClassSchedules([]);
+        }
+      }
+    };
+    
+    fetchClassSchedules();
+  }, [showEditModal, classDetail.classroomId]);
   
   const handleLeaveClass = async () => {
     try {
@@ -231,6 +254,37 @@ export function SettingsTab({ classDetail, openEditClassModal, role = 'Student' 
       setIsDeleting(false);
     }
   };
+
+  const handleUpdateClass = async (updatedData: any) => {
+    try {
+      setIsSaving(false);
+      
+      // Thông báo cập nhật thành công
+      toast({
+        title: "Cập nhật thành công",
+        description: "Thông tin lớp học đã được cập nhật thành công.",
+        variant: "default"
+      });
+      
+      // Refresh trang sau khi cập nhật
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (error: any) {
+      toast({
+        title: "Lỗi khi cập nhật",
+        description: error.message || "Đã xảy ra lỗi khi cập nhật thông tin lớp học. Vui lòng thử lại sau.",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  // Format endDate để hiển thị
+  const formattedEndDate = classDetail.endDate 
+    ? (isValid(new Date(classDetail.endDate)) 
+        ? format(parseISO(classDetail.endDate), 'dd/MM/yyyy')
+        : 'Định dạng không hợp lệ')
+    : 'Không giới hạn';
   
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -257,12 +311,27 @@ export function SettingsTab({ classDetail, openEditClassModal, role = 'Student' 
               <div className="font-medium text-muted-foreground">Thời gian:</div>
               <div className="col-span-2">{classDetail.time}</div>
             </div>
+            {/* Hiển thị thông tin ngày bắt đầu và kết thúc */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="font-medium text-muted-foreground">Ngày bắt đầu:</div>
+              <div className="col-span-2">
+                {classDetail.startDate 
+                  ? (isValid(new Date(classDetail.startDate)) 
+                      ? format(parseISO(classDetail.startDate), 'dd/MM/yyyy')
+                      : 'Định dạng không hợp lệ')
+                  : 'Không có thông tin'}
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="font-medium text-muted-foreground">Ngày kết thúc:</div>
+              <div className="col-span-2">{formattedEndDate}</div>
+            </div>
           </div>
           
           {role === 'Teacher' && (
             <Button 
               variant="outline" 
-              onClick={openEditClassModal} 
+              onClick={() => setShowEditModal(true)} 
               className="w-full"
             >
               Chỉnh sửa thông tin
@@ -329,6 +398,17 @@ export function SettingsTab({ classDetail, openEditClassModal, role = 'Student' 
         handleDeleteClass={handleDeleteClass}
         className={classDetail.name}
         isDeleting={isDeleting}
+      />
+
+      {/* Sử dụng ClassFormModal thay vì component riêng biệt */}
+      <ClassFormModal
+        isOpen={showEditModal}
+        onOpenChange={setShowEditModal}
+        onSubmitClass={handleUpdateClass}
+        classDetail={classDetail}
+        rawSchedules={classSchedules}
+        mode="edit"
+        isSubmitting={isSaving}
       />
     </div>
   );

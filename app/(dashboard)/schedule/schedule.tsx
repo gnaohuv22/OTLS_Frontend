@@ -44,6 +44,8 @@ export default function Schedule() {
   // Dùng refs để lưu trữ các giá trị mà không cần trigger re-render khi chúng thay đổi
   const holidaysProcessed = useRef(false);
   const schedulesRef = useRef(classSchedules);
+  const classroomsRef = useRef<any[]>([]);
+  const apiSchedulesCache = useRef<any[]>([]);
 
   // Add a new ref to track if we're currently fetching
   const isFetchingRef = useRef(false);
@@ -52,6 +54,64 @@ export default function Schedule() {
   useEffect(() => {
     schedulesRef.current = classSchedules;
   }, [classSchedules]);
+
+  // Cập nhật ref khi classrooms thay đổi
+  useEffect(() => {
+    classroomsRef.current = classrooms;
+  }, [classrooms]);
+
+  // Hàm để tính toán lịch học cho một khoảng thời gian
+  const calculateSchedulesForDateRange = useCallback((startDate: Date, endDate: Date) => {
+    // Kiểm tra nếu không có dữ liệu API hoặc không có lớp học
+    if (apiSchedulesCache.current.length === 0 || classroomsRef.current.length === 0) {
+      return {};
+    }
+
+    const schedulesMap: Record<string, ClassSchedule[]> = {...schedulesRef.current};
+    let hasChanges = false;
+
+    // Tính lịch học cho mỗi lớp học
+    apiSchedulesCache.current.forEach(classroomSchedule => {
+      // Tìm thông tin lớp học tương ứng
+      const classroom = classroomsRef.current.find(c => c.classroomId === classroomSchedule.classroomId);
+      
+      if (classroom && classroomSchedule.scheduleInfo) {
+        // Chuyển đổi từ định dạng API sang định dạng ứng dụng, chỉ định khoảng thời gian
+        const appSchedules = mapApiSchedulesToAppSchedules(
+          classroomSchedule.scheduleInfo, 
+          classroom,
+          startDate,
+          endDate
+        );
+        
+        // Thêm lịch học vào map theo ngày
+        appSchedules.forEach(schedule => {
+          if (schedule.dateString) {
+            if (!schedulesMap[schedule.dateString]) {
+              schedulesMap[schedule.dateString] = [];
+              hasChanges = true;
+            }
+            
+            // Kiểm tra xem lịch học này đã tồn tại chưa
+            const exists = schedulesMap[schedule.dateString].some(
+              existingSchedule => existingSchedule.id === schedule.id
+            );
+            
+            if (!exists) {
+              schedulesMap[schedule.dateString].push(schedule);
+              hasChanges = true;
+            }
+          }
+        });
+      }
+    });
+
+    if (hasChanges) {
+      return schedulesMap;
+    }
+    
+    return null; // Không có thay đổi
+  }, []);
 
   // Fetch lớp học và lịch học
   const fetchClassroomsAndSchedules = useCallback(async () => {
@@ -81,13 +141,21 @@ export default function Schedule() {
       
       setClassrooms(userClassrooms);
       
-      // Lấy lịch học cho tất cả lớp học bằng API mới
+      // Lấy lịch học cho tất cả lớp học bằng API
       if (userClassrooms.length > 0) {
         // Tạo danh sách ID lớp học
         const classroomIds = userClassrooms.map(classroom => classroom.classroomId);
         
-        // Gọi API mới để lấy lịch học cho tất cả lớp cùng lúc
+        // Gọi API để lấy lịch học cho tất cả lớp cùng lúc
         const schedulesResponse = await ClassroomService.getSchedulesByClassroomIds(classroomIds);
+        
+        // Lưu dữ liệu API vào cache để tái sử dụng
+        apiSchedulesCache.current = schedulesResponse;
+        
+        // Tính toán lịch học cho 3 tháng: tháng hiện tại, tháng trước và tháng sau
+        const today = toVietnamTime(new Date());
+        const startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1); // Tháng trước
+        const endDate = new Date(today.getFullYear(), today.getMonth() + 2, 0); // Cuối tháng sau
         
         // Xử lý response và ánh xạ lịch học
         const schedulesMap: Record<string, ClassSchedule[]> = {};
@@ -98,7 +166,12 @@ export default function Schedule() {
           
           if (classroom && classroomSchedule.scheduleInfo) {
             // Chuyển đổi từ định dạng API sang định dạng ứng dụng
-            const appSchedules = mapApiSchedulesToAppSchedules(classroomSchedule.scheduleInfo, classroom);
+            const appSchedules = mapApiSchedulesToAppSchedules(
+              classroomSchedule.scheduleInfo, 
+              classroom,
+              startDate,
+              endDate
+            );
             
             // Thêm lịch học vào map theo ngày
             appSchedules.forEach(schedule => {
@@ -221,6 +294,23 @@ export default function Schedule() {
       }
     }
   }, [holidays]); // Removed classSchedules from dependency array
+
+  // Khi người dùng thay đổi tháng, tính toán lịch cho khoảng thời gian mới
+  useEffect(() => {
+    // Chỉ tính toán lại lịch nếu đã có dữ liệu API
+    if (apiSchedulesCache.current.length > 0 && classroomsRef.current.length > 0) {
+      // Tính toán lịch cho tháng trước, tháng hiện tại và tháng sau
+      const firstDayOfPrevMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1);
+      const lastDayOfNextMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 2, 0);
+      
+      const updatedSchedulesMap = calculateSchedulesForDateRange(firstDayOfPrevMonth, lastDayOfNextMonth);
+      
+      // Nếu có thay đổi, cập nhật state
+      if (updatedSchedulesMap) {
+        setClassSchedules(updatedSchedulesMap);
+      }
+    }
+  }, [currentMonth, calculateSchedulesForDateRange]);
 
   // Chuyển đổi mảng holidays thành định dạng đơn giản hơn để truyền vào component
   const holidayDates = useMemo(() => 

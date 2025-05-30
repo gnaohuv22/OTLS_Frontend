@@ -37,24 +37,67 @@ export function getUpcomingDates(fromDate: Date, days: number, classSchedules: R
  * Chuyển đổi API schedule sang định dạng ứng dụng
  * @param apiSchedules Lịch học từ API
  * @param classroom Thông tin lớp học
+ * @param startDate Ngày bắt đầu tính lịch (mặc định là ngày hiện tại)
+ * @param endDate Ngày kết thúc tính lịch (mặc định là 2 tháng sau ngày bắt đầu)
  * @returns Lịch học chuyển đổi
  */
-export function mapApiSchedulesToAppSchedules(apiSchedules: any[], classroom: Classroom): ClassSchedule[] {
+export function mapApiSchedulesToAppSchedules(
+  apiSchedules: any[], 
+  classroom: Classroom,
+  startDate?: Date,
+  endDate?: Date
+): ClassSchedule[] {
   const schedulesForDifferentDates: ClassSchedule[] = [];
   
-  // Tạo lịch học cho nhiều tháng
-  // Tính từ tháng hiện tại + 2 tháng tiếp theo
+  // Tính toán ngày bắt đầu dựa trên input và startDate của lớp học
   const today = toVietnamTime(new Date());
-  const endDate = toVietnamTime(new Date(today));
-  endDate.setMonth(today.getMonth() + 2);
+  let classStartDate = classroom.startDate ? new Date(classroom.startDate) : null;
+  
+  // Nếu ngày bắt đầu của lớp học lớn hơn ngày hiện tại, sử dụng ngày bắt đầu của lớp học
+  if (classStartDate && classStartDate > today) {
+    startDate = classStartDate;
+  }
+  // Nếu ngày bắt đầu của lớp học nhỏ hơn ngày hiện tại, sử dụng ngày hiện tại
+  else if (classStartDate && classStartDate < today) {
+    // Nếu startDate được cung cấp, sử dụng max giữa startDate và ngày hiện tại
+    if (startDate) {
+      startDate = startDate < today ? today : startDate;
+    } else {
+      startDate = today;
+    }
+  }
+  
+  // Nếu không cung cấp ngày bắt đầu, sử dụng ngày hiện tại
+  const dateStart = startDate ? toVietnamTime(new Date(startDate)) : toVietnamTime(new Date());
+  dateStart.setHours(0, 0, 0, 0);
+  
+  // Xử lý ngày kết thúc
+  let dateEnd;
+  // Nếu lớp học có endDate, ưu tiên sử dụng endDate của lớp học
+  if (classroom.endDate) {
+    const classEndDate = new Date(classroom.endDate);
+    // Nếu endDate được cung cấp, sử dụng min của endDate và classEndDate
+    if (endDate) {
+      dateEnd = endDate > classEndDate ? classEndDate : endDate;
+    } else {
+      dateEnd = classEndDate;
+    }
+  } else {
+    // Nếu không có endDate của lớp học, sử dụng endDate được cung cấp hoặc mặc định 2 tháng
+    dateEnd = endDate ? toVietnamTime(new Date(endDate)) : toVietnamTime(new Date(dateStart));
+    if (!endDate) {
+      dateEnd.setMonth(dateStart.getMonth() + 2);
+    }
+  }
+  
+  dateEnd.setHours(23, 59, 59, 999);
   
   apiSchedules.forEach(apiSchedule => {
     // Lịch dựa trên dayOfWeek sẽ lặp lại hàng tuần
-    // Ta sẽ tạo các lịch học cho các tuần từ thời điểm hiện tại đến 2 tháng tiếp theo
-    let currentDate = new Date(today);
-    currentDate.setHours(0, 0, 0, 0);
+    // Ta sẽ tạo các lịch học cho các tuần từ thời điểm bắt đầu đến thời điểm kết thúc
+    let currentDate = new Date(dateStart);
     
-    while (currentDate <= endDate) {
+    while (currentDate <= dateEnd) {
       // Sử dụng ánh xạ chính xác từ dayOfWeek API sang ngày trong tuần JavaScript
       const jsDayOfWeek = API_TO_JS_DAY[apiSchedule.dayOfWeek];
       
