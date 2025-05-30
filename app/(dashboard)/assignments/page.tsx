@@ -27,9 +27,11 @@ export default function AssignmentsList() {
       try {
         setIsLoading(true);
 
-        if (role === 'Student' && user?.userID) {
-          // For students, first get their classrooms
-          const classrooms = await ClassroomService.getClassroomsByStudentId(user.userID);
+        if ((role === 'Student' || role === 'Teacher') && user?.userID) {
+          // For students and teachers, first get their classrooms
+          const classrooms = role === 'Student' 
+            ? await ClassroomService.getClassroomsByStudentId(user.userID)
+            : await ClassroomService.getClassroomsByTeacherId(user.userID);
 
           if (classrooms && classrooms.length > 0) {
             // Create an array to hold all assignments
@@ -66,13 +68,17 @@ export default function AssignmentsList() {
             setAssignments(allAssignments);
 
             // Fetch student's submissions to update assignment status
-            fetchUserSubmissions(user.userID, allAssignments);
+            if (role === 'Student') {
+              fetchUserSubmissions(user.userID, allAssignments);
+            } else {
+              setIsLoading(false);
+            }
           } else {
             setAssignments([]);
             setIsLoading(false);
           }
         } else {
-          // For teachers and other roles, use the original implementation
+          // For admin and other roles, use the original implementation
           const response = await getAllAssignments();
 
           if (response.data) {
@@ -96,6 +102,8 @@ export default function AssignmentsList() {
             // For students, fetch their submissions
             if (role === 'Student' && user?.userID) {
               fetchUserSubmissions(user.userID, transformedAssignments);
+            } else {
+              setIsLoading(false);
             }
           }
         }
@@ -107,8 +115,11 @@ export default function AssignmentsList() {
             description: "Không thể tải danh sách bài tập.",
           });
         }
-      } finally {
         setIsLoading(false);
+      } finally {
+        if (isLoading) {
+          setIsLoading(false);
+        }
       }
     };
 
