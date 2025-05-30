@@ -1,4 +1,3 @@
-export { default as Chat } from './chat';
 export { default as MessageItem } from './message-item';
 export { default as ConversationList } from './conversation-list';
 export { default as ConversationInfo } from './conversation-info';
