@@ -17,9 +17,6 @@ function ClassInfoCardsComponent({ classDetail, formatDate, getNextClassStatus }
         </CardHeader>
         <CardContent className="p-3 sm:p-4 pt-0">
           <div className="text-base sm:text-xl md:text-2xl font-bold truncate">{classDetail.subject}</div>
-          <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
-            Đang học: {classDetail.currentUnit || 'Chưa có thông tin'}
-          </p>
         </CardContent>
       </Card>
       
@@ -72,14 +69,14 @@ function ClassInfoCardsComponent({ classDetail, formatDate, getNextClassStatus }
           {classDetail.schedule ? (
             <>
               <div className="text-base sm:text-xl md:text-2xl font-bold truncate">
-                {formatDate(classDetail.nextClass).split(',')[0]}
+                {formatDate(classDetail.nextClass).split(',')[0] || 'Không có thông tin'}
               </div>
               <div className="flex items-center">
                 <span className={`text-[10px] sm:text-xs ${getNextClassStatus(classDetail.nextClass).color}`}>
                   • {getNextClassStatus(classDetail.nextClass).text}
                 </span>
                 <span className="text-[10px] sm:text-xs text-muted-foreground ml-1 truncate">
-                  {formatDate(classDetail.nextClass).split(',')[1]}
+                  {formatDate(classDetail.nextClass).split(',')[1] || ''}
                 </span>
               </div>
             </>

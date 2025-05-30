@@ -74,12 +74,21 @@ export interface Comment {
 
 // Assignment related types
 export interface Assignment {
-  id: number;
+  id?: number;
+  assignmentId?: string;
   title: string;
-  content: string;
+  content?: string;
+  description?: string;
   dueDate: string;
-  status: 'pending' | 'completed';
-  isImportant: boolean;
+  status?: 'pending' | 'completed';
+  isImportant?: boolean;
+  maxPoints?: number;
+  allowLateSubmissions?: boolean;
+  assignmentType?: string;
+  textContent?: string;
+  isDelete?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // Material related types
@@ -148,8 +157,8 @@ export interface ClassDetailHeaderProps {
 
 export interface ClassInfoCardsProps {
   classDetail: ClassDetail;
-  formatDate: (dateString: string) => string;
-  getNextClassStatus: (nextClass: string) => { text: string; color: string };
+  formatDate: (dateString: string | undefined) => string;
+  getNextClassStatus: (nextClass: string | undefined) => { text: string; color: string };
 }
 
 export interface ClassTabNavProps {
@@ -199,10 +208,10 @@ export interface CommentSectionProps {
 // Enhanced announcement management props
 export interface AnnouncementManagerProps {
   classroomId: string;
-  userData: UserData;
+  userData?: UserData;
   role: UserRole;
-  formatDate: (dateString: string) => string;
-  students: Student[]; // For user tagging
+  formatDate: (dateString: string | undefined) => string;
+  students: Student[] | undefined; // For user tagging
   teacher?: {
     id: string;
     name: string;

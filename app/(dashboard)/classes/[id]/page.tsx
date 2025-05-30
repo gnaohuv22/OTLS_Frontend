@@ -289,7 +289,9 @@ export default function ClassDetailPage() {
   }, [classId, toast]);
 
   // Helper functions
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | undefined) => {
+    if (!dateString) return 'Không có thông tin';
+    
     const date = new Date(dateString);
     return date.toLocaleDateString('vi-VN', {
       weekday: 'long',
@@ -301,7 +303,9 @@ export default function ClassDetailPage() {
     });
   };
 
-  const getNextClassStatus = (nextClass: string) => {
+  const getNextClassStatus = (nextClass: string | undefined) => {
+    if (!nextClass) return { text: 'Không xác định', color: 'text-gray-500' };
+    
     const now = new Date();
     const next = new Date(nextClass);
     const diffHours = (next.getTime() - now.getTime()) / (1000 * 60 * 60);

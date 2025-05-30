@@ -3,7 +3,10 @@ import { ClassDetailHeaderProps } from './types';
 import { memo } from 'react';
 
 // Helper function
-const getNextClassStatus = (nextClass: string) => {
+const getNextClassStatus = (nextClass: string | undefined) => {
+  // Nếu nextClass không tồn tại, coi như đã kết thúc
+  if (!nextClass) return { text: 'Không xác định', color: 'text-gray-500' };
+  
   const now = new Date();
   const next = new Date(nextClass);
   const diffHours = (next.getTime() - now.getTime()) / (1000 * 60 * 60);

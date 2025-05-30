@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,7 +20,7 @@ import {
   Cake,
   X
 } from 'lucide-react';
-import { StudentsTabProps } from '../types';
+import { StudentsTabProps, Student } from '../types';
 import { useToast } from '@/components/ui/use-toast';
 import { ClassroomService } from '@/lib/api/classes';
 import { UserService, UserInformation } from '@/lib/api/user'; 
@@ -43,6 +45,7 @@ import {
 } from "@/components/ui/dialog";
 
 export function StudentsTab({ classDetail, role, setShowAddStudentModal }: StudentsTabProps) {
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [isRemovingStudent, setIsRemovingStudent] = useState(false);
   const [studentToRemove, setStudentToRemove] = useState<{ id: string, name: string } | null>(null);
@@ -50,13 +53,15 @@ export function StudentsTab({ classDetail, role, setShowAddStudentModal }: Stude
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [studentDetail, setStudentDetail] = useState<UserInformation | null>(null);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
-  const { toast } = useToast();
   
+  // Đảm bảo students luôn là một mảng, không bao giờ undefined
+  const students = classDetail.students || [];
+
   // Lọc học sinh theo từ khóa tìm kiếm
   const filteredStudents = searchTerm 
-    ? classDetail.students.filter(student => 
+    ? students.filter(student =>
         student.name.toLowerCase().includes(searchTerm.toLowerCase()))
-    : classDetail.students;
+    : students;
 
   // Function to view student details
   const handleViewStudentDetail = useCallback(async (studentId: string) => {
@@ -118,7 +123,7 @@ export function StudentsTab({ classDetail, role, setShowAddStudentModal }: Stude
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-        <h3 className="text-lg font-semibold">Danh sách học sinh ({classDetail.students.length})</h3>
+        <h3 className="text-lg font-semibold">Danh sách học sinh ({students.length})</h3>
         {role === 'Teacher' && (
           <Button 
             className="gap-2 w-full sm:w-auto"

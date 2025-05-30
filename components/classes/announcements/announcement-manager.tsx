@@ -240,27 +240,27 @@ export function AnnouncementManager({
         }
     };
 
-    // Handle add comment - Real-time updates will handle UI updates automatically
+    // Handle add comment
     const handleAddComment = async (announcementId: string, comment: string, mentions?: string[], parentCommentId?: string) => {
         try {
-            // Create the comment request object
+            if (!userData) {
+                throw new Error('Không có thông tin người dùng');
+            }
+            
             const commentRequest: CreateCommentRequest = {
                 content: comment,
                 authorId: userData.id,
                 announcementId
             };
             
-            // Only add parentCommentId if it exists
             if (parentCommentId) {
                 commentRequest.parentCommentId = parentCommentId;
             }
             
-            // Only add mentions if they exist and are not empty
             if (mentions && mentions.length > 0) {
                 commentRequest.mentions = mentions;
             }
-
-            // Create the comment
+            
             await AnnouncementService.createComment(commentRequest);
         } catch (error: any) {
             toast({
@@ -271,21 +271,22 @@ export function AnnouncementManager({
         }
     };
 
-    // Handle update comment - Real-time updates will handle UI updates automatically
+    // Handle update comment
     const handleUpdateComment = async (commentId: string, content: string, mentions?: string[]) => {
         try {
-            // Create the update request object
+            if (!userData) {
+                throw new Error('Không có thông tin người dùng');
+            }
+            
             const updateRequest: UpdateCommentRequest = {
                 id: commentId,
                 content
             };
             
-            // Only add mentions if they exist and are not empty
             if (mentions && mentions.length > 0) {
                 updateRequest.mentions = mentions;
             }
-
-            // Update the comment
+            
             await AnnouncementService.updateComment(updateRequest);
         } catch (error: any) {
             toast({
@@ -319,15 +320,37 @@ export function AnnouncementManager({
         }
     };
 
-    // Sort announcements: pinned first, then by date
+    // Render component
     const sortedAnnouncements = [...announcements].sort((a, b) => {
         if (a.isPinned && !b.isPinned) return -1;
         if (!a.isPinned && b.isPinned) return 1;
         return new Date(b.date).getTime() - new Date(a.date).getTime();
     });
-
+    
     const visibleAnnouncements = sortedAnnouncements.slice(0, visibleCount);
     const hasMoreAnnouncements = sortedAnnouncements.length > visibleCount;
+
+    // Kiểm tra userData
+    if (!userData) {
+        return (
+            <Card>
+                <CardHeader>
+                    <CardTitle>Thông báo lớp học</CardTitle>
+                    <CardDescription>
+                        Không thể hiển thị thông báo do thiếu thông tin người dùng
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex justify-center">
+                        <Button variant="outline" onClick={() => window.location.reload()}>
+                            <RefreshCw className="mr-2 h-4 w-4" />
+                            Tải lại
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
+        );
+    }
 
     if (isLoading) {
         return (
@@ -439,7 +462,7 @@ export function AnnouncementManager({
                                 onUpdateComment={handleUpdateComment}
                                 onDeleteComment={handleDeleteComment}
                                 onTogglePin={handleTogglePin}
-                                students={students}
+                                students={students || []}
                                 teacher={teacher}
                             />
                         </div>

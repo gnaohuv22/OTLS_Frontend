@@ -1,13 +1,21 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Plus } from 'lucide-react';
-import { AssignmentsTabProps } from '../types';
-import { ClassroomService, Assignment } from '@/lib/api/classes';
+import { AssignmentsTabProps, Assignment } from '../types';
+import { ClassroomService } from '@/lib/api/classes';
 import { useToast } from '@/components/ui/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+
+// Hàm mặc định để format ngày khi không có formatDate
+const defaultFormatDate = (dateString: string | undefined) => {
+  if (!dateString) return 'Không xác định';
+  return new Date(dateString).toLocaleDateString('vi-VN');
+};
 
 export function AssignmentsTab({ classDetail, role, formatDate, classId }: AssignmentsTabProps) {
   const router = useRouter();
@@ -15,7 +23,12 @@ export function AssignmentsTab({ classDetail, role, formatDate, classId }: Assig
   const [visibleAssignments, setVisibleAssignments] = useState(3);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
+  
+  // Tạo hàm format phù hợp với kiểu dữ liệu yêu cầu
+  const safeFormatDate = formatDate 
+    ? ((date: string | undefined) => formatDate(date as string)) 
+    : defaultFormatDate;
+    
   // Fetch assignments from the API
   useEffect(() => {
     const fetchAssignments = async () => {
@@ -124,7 +137,7 @@ export function AssignmentsTab({ classDetail, role, formatDate, classId }: Assig
                     </Badge>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Hạn nộp: {formatDate(assignment.dueDate)}
+                    Hạn nộp: {safeFormatDate(assignment.dueDate)}
                   </p>
                 </CardHeader>
                 <CardContent>
@@ -167,7 +180,7 @@ export function AssignmentsTab({ classDetail, role, formatDate, classId }: Assig
                     </Badge>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Đã hết hạn: {formatDate(assignment.dueDate)}
+                    Đã hết hạn: {safeFormatDate(assignment.dueDate)}
                   </p>
                 </CardHeader>
                 <CardContent>
