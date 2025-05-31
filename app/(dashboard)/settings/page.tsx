@@ -948,7 +948,7 @@ export default function SettingsPage() {
       
       toast({
         title: "🤖 Giao diện Claude đã được kích hoạt",
-        description: "Vinh danh trợ lý AI giúp phát triển dự án này. Cảm ơn Claude!",
+        description: "Vinh danh trợ lý AI mạnh mẽ đã hỗ trợ phát triển dự án này. Cảm ơn Claude!",
         duration: 5000,
       });
       
@@ -964,7 +964,6 @@ export default function SettingsPage() {
       
       toast({
         title: "Đã tắt giao diện Claude",
-        description: "Trở lại giao diện bình thường",
       });
     }
     
