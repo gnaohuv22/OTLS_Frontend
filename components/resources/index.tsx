@@ -151,17 +151,15 @@ export function Resources() {
           });
           setResources(adaptedResources);
         } catch (resourceError) {
-          console.error('Không thể tải tài nguyên:', resourceError);
           toast({
             title: 'Lưu ý',
             description: 'Không thể tải danh sách tài nguyên. Bạn vẫn có thể tải lên tài nguyên mới.',
-            variant: 'default'
+            variant: 'destructive'
           });
           // Đặt mảng tài nguyên trống nếu tải thất bại
           setResources([]);
         }
       } catch (error) {
-        console.error('Không thể tải dữ liệu môn học:', error);
         toast({
           title: 'Lỗi',
           description: 'Không thể tải danh sách môn học. Vui lòng thử lại sau.',

@@ -87,7 +87,7 @@ export function AddStudentModal({
 
   // Search students based on query
   const searchStudents = useCallback((query: string) => {
-    if (!query.trim()) {
+    if (!query || query.length < 3) {
       setSearchResults([]);
       return;
     }
@@ -112,16 +112,24 @@ export function AddStudentModal({
     }
   }, [allStudents, enrolledStudentIds]);
 
-  // Handle search input change with debounce
-  const handleSearchChange = useCallback((value: string) => {
+  // Handle search input change with continuous update
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setNewStudentEmail(value);
     setSearchQuery(value);
-    searchStudents(value);
-  }, [searchStudents]);
+    
+    // Only search when there are at least 3 characters
+    if (value.length >= 3) {
+      searchStudents(value);
+    } else {
+      setSearchResults([]);
+    }
+  }, [searchStudents, setNewStudentEmail]);
 
   // Handle immediate input change (for display purposes)
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setNewStudentEmail(e.target.value);
-  }, [setNewStudentEmail]);
+    handleSearchChange(e);
+  }, [handleSearchChange]);
 
   // Add student to selected list
   const handleSelectStudent = useCallback((student: UserInformation) => {
@@ -255,15 +263,18 @@ export function AddStudentModal({
 
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground z-10" />
-              <DebounceInput 
-                placeholder="Tìm kiếm học sinh..." 
+              <Input 
+                placeholder="Tìm kiếm học sinh (nhập ít nhất 3 ký tự)..." 
                 value={newStudentEmail}
                 onChange={handleInputChange}
-                onValueChange={handleSearchChange}
-                debounceDelay={500}
                 className="pl-8"
                 disabled={availableStudentsCount === 0}
               />
+              {searchQuery.length > 0 && searchQuery.length < 3 && (
+                <div className="mt-1 text-xs text-muted-foreground">
+                  Nhập thêm {3 - searchQuery.length} ký tự để bắt đầu tìm kiếm
+                </div>
+              )}
             </div>
 
             {isSearching && (
@@ -306,7 +317,7 @@ export function AddStudentModal({
               </div>
             )}
             
-            {searchResults.length === 0 && searchQuery.trim() !== '' && !isSearching && (
+            {searchResults.length === 0 && searchQuery.trim() !== '' && !isSearching && searchQuery.length >= 3 && (
               <div className="flex flex-col items-center justify-center p-4 text-center border rounded">
                 <UserRound className="h-8 w-8 text-muted-foreground mb-2" />
                 <p className="text-muted-foreground">Không tìm thấy học sinh phù hợp</p>

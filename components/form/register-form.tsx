@@ -151,25 +151,8 @@ export function RegisterForm() {
       return;
     }
 
-    // Kiểm tra tuổi hợp lệ
-    if (formData.dateOfBirth) {
-      const birthDate = new Date(formData.dateOfBirth);
-      const today = new Date();
-      let age = today.getFullYear() - birthDate.getFullYear();
-      const m = today.getMonth() - birthDate.getMonth();
-      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-        age--;
-      }
-
-      if (age < 6 || age > 20) {
-        toast({
-          variant: "destructive",
-          title: "Lỗi",
-          description: "Học sinh phải từ 6 đến 20 tuổi",
-        });
-        return;
-      }
-    }
+    // Không cần kiểm tra tuổi thủ công ở đây nữa vì đã được xử lý trong validateField
+    // Kiểm tra tuổi hợp lệ được thực hiện thông qua validateUserField trong quá trình validate 
 
     setIsLoading(true);
     
