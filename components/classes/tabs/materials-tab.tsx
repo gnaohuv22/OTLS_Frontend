@@ -138,10 +138,10 @@ export function MaterialsTab({ classDetail, role, formatDate }: MaterialsTabProp
     }
 
     // For new materials, both files are required
-    if (!editingMaterial && (!resourceFileRef.current?.files?.[0] || !thumbnailFileRef.current?.files?.[0])) {
+    if (!editingMaterial && !resourceFileRef.current?.files?.[0]) {
       toast({
         title: 'Lỗi',
-        description: 'Vui lòng tải lên tài liệu và hình ảnh thu nhỏ',
+        description: 'Vui lòng tải lên tài liệu học tập',
         variant: 'destructive',
       });
       return;
@@ -354,7 +354,7 @@ export function MaterialsTab({ classDetail, role, formatDate }: MaterialsTabProp
                     size="sm" 
                     asChild
                   >
-                    <a href={`/resources/${material.resourceId}`} target="_blank" rel="noopener noreferrer">
+                    <a href={`${material.resourceUrl}`} target="_blank" rel="noopener noreferrer">
                       Xem chi tiết
                     </a>
                   </Button>
@@ -502,7 +502,7 @@ export function MaterialsTab({ classDetail, role, formatDate }: MaterialsTabProp
               )}
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="material-thumbnail">Hình thu nhỏ {!editingMaterial && '(Bắt buộc)'}</Label>
+              <Label htmlFor="material-thumbnail">Hình thu nhỏ {false && '(Bắt buộc)'}</Label>
               <div className="border rounded p-2">
                 <Input 
                   id="material-thumbnail" 
@@ -511,11 +511,9 @@ export function MaterialsTab({ classDetail, role, formatDate }: MaterialsTabProp
                   ref={thumbnailFileRef}
                 />
               </div>
-              {editingMaterial && (
-                <p className="text-xs text-muted-foreground">
-                  Để trống nếu không muốn thay đổi hình thu nhỏ hiện tại.
-                </p>
-              )}
+              <p className="text-xs text-muted-foreground">
+                Hình thu nhỏ là tùy chọn, để trống nếu không muốn thêm hình.
+              </p>
             </div>
           </div>
           <DialogFooter className="flex-col sm:flex-row gap-2">
