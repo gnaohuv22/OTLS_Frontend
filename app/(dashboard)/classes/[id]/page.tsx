@@ -389,6 +389,8 @@ export default function ClassDetailPage() {
       setClassDetail({
         ...classDetail,
         isOnlineMeetingActive: true,
+        startDate: classDetail.startDate,
+        endDate: classDetail.endDate,
         status: 'active'
       });
       
