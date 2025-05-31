@@ -41,7 +41,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
                        document.documentElement.classList.contains('minimal-glacier') ? 'minimal-glacier' :
                        document.documentElement.classList.contains('forest-zen') ? 'forest-zen' :
                        document.documentElement.classList.contains('mono-code') ? 'mono-code' :
-                       document.documentElement.classList.contains('claude-theme') ? 'claude-theme' :
                        document.documentElement.classList.contains('vietnamese-heritage') ? 'vietnamese-heritage' : 'system';
           
           window.dispatchEvent(new CustomEvent('themeChange', { 

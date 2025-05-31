@@ -33,8 +33,6 @@ import {
 } from "@/components/ui/tooltip";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 import { useAuth } from "@/lib/auth-context";
-import { useEffect, useState } from "react";
-import Image from "next/image";
 
 // NavItem component cho sidebar desktop
 function NavItem({
@@ -87,32 +85,6 @@ function NavItem({
 export function Sidebar() {
     const pathname = usePathname();
     const { role } = useAuth();
-    const [isClaudeTheme, setIsClaudeTheme] = useState(false);
-    
-    // Listen for theme changes
-    useEffect(() => {
-        // Check initial theme
-        if (typeof window !== 'undefined') {
-            const currentTheme = localStorage.getItem('theme');
-            setIsClaudeTheme(currentTheme === 'claude-theme');
-        }
-        
-        // Listen for theme changes
-        const handleThemeChange = (event: CustomEvent) => {
-            if (event.detail && event.detail.theme) {
-                setIsClaudeTheme(event.detail.theme === 'claude-theme');
-            } else {
-                // Check theme from localStorage as fallback
-                const currentTheme = localStorage.getItem('theme');
-                setIsClaudeTheme(currentTheme === 'claude-theme');
-            }
-        };
-        
-        window.addEventListener('themeChange', handleThemeChange as EventListener);
-        return () => {
-            window.removeEventListener('themeChange', handleThemeChange as EventListener);
-        };
-    }, []);
     
     // Nếu là phụ huynh, ẩn sidebar
     if (role === 'Parent' as any) {
@@ -245,30 +217,8 @@ export function Sidebar() {
     };
 
     const navItems = getNavItems();
-    
-    // Determine logo content based on theme
-    let logoContent;
-    if (isClaudeTheme) {
-        logoContent = (
-            <div className="claude-logo flex items-center justify-center w-full h-full">
-                <Image 
-                    src="/claude-ai-icon.svg" 
-                    alt="Claude AI Logo" 
-                    width={40} 
-                    height={40} 
-                    className="transition-all group-hover:scale-110" 
-                />
-            </div>
-        );
-    } else {
-        logoContent = role === 'Admin' as any ? 
-            <Shield className="h-5 w-5 transition-all group-hover:scale-110" /> : 
-            <GraduationCap className="h-5 w-5 transition-all group-hover:scale-110" />;
-    }
-    
-    const logoText = isClaudeTheme ? 
-        "Claude - Trợ lý AI" : 
-        (role === 'Admin' as any ? "Quản trị OTLS" : "Online Teaching and Learning Solution");
+    const logoIcon = role === 'Admin' as any ? <Shield className="h-5 w-5 transition-all group-hover:scale-110" /> : <GraduationCap className="h-5 w-5 transition-all group-hover:scale-110" />;
+    const logoText = role === 'Admin' as any ? "Quản trị OTLS" : "Online Teaching and Learning Solution";
 
     return (
         <>
@@ -287,7 +237,7 @@ export function Sidebar() {
                                 href="/dashboard"
                                 className="group flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:text-base"
                             >
-                                {logoContent}
+                                {logoIcon}
                                 <span className="sr-only">{logoText}</span>
                             </Link>
                             {navItems.map((item) => (
@@ -317,7 +267,7 @@ export function Sidebar() {
                         href="/dashboard"
                         className="group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:w-8 md:text-base"
                     >
-                        {logoContent}
+                        {logoIcon}
                         <span className="sr-only">{logoText}</span>
                     </Link>
 

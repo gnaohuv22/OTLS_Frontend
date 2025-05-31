@@ -116,9 +116,6 @@ export default function SettingsPage() {
   const [isStarryNightUnlocked, setIsStarryNightUnlocked] = useState(false);
   const [showKonamiHint, setShowKonamiHint] = useState(false);
   const konamiCode = useMemo(() => ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyB', 'KeyA'], []);
-  const [claudeSequence, setClaudeSequence] = useState<string[]>([]);
-  const claudeCode = useMemo(() => ['KeyC', 'KeyL', 'KeyA', 'KeyU', 'KeyD', 'KeyE'], []);
-  const [isClaudeThemeActive, setIsClaudeThemeActive] = useState(false);
 
   // Easter egg state
   const [systemClickCount, setSystemClickCount] = useState(0);
@@ -475,9 +472,9 @@ export default function SettingsPage() {
         const newSequence = [...prev, event.code];
         
         // Check if current sequence matches the beginning of konami code
-        const isValidKonamiSequence = konamiCode.slice(0, newSequence.length).every((key: string, index: number) => key === newSequence[index]);
+        const isValidSequence = konamiCode.slice(0, newSequence.length).every((key, index) => key === newSequence[index]);
         
-        if (!isValidKonamiSequence) {
+        if (!isValidSequence) {
           // Reset if sequence is wrong
           return [];
         }
@@ -570,11 +567,6 @@ export default function SettingsPage() {
 
   // Handle theme change with optimized synchronization
   const handleThemeChange = useCallback((value: string) => {
-    // If changing to a theme other than light or dark, disable Claude theme
-    if (value !== 'light' && value !== 'dark' && isClaudeThemeActive) {
-      setIsClaudeThemeActive(false);
-    }
-
     // Handle special starry night theme
     if (value === "starry-night") {
       activateStarryNight();
@@ -602,7 +594,7 @@ export default function SettingsPage() {
         duration: 3000,
       });
     }
-  }, [playSound, setTheme, isStarryNight, isClaudeThemeActive, activateStarryNight, applyThemeClass, toast]);
+  }, [playSound, setTheme, isStarryNight, activateStarryNight, applyThemeClass, toast]);
 
   // Effect to handle theme class application when theme changes
   useEffect(() => {
@@ -927,139 +919,6 @@ export default function SettingsPage() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [showKeyboardShortcuts, handleThemeChange, resetAllSettings, saveAllSettings]);
-
-  // Add effect to check localStorage for Claude theme
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedTheme = localStorage.getItem("theme");
-      setIsClaudeThemeActive(savedTheme === "claude-theme");
-    }
-  }, []);
-
-  // Add toggleClaudeTheme function
-  const toggleClaudeTheme = useCallback(() => {
-    const newState = !isClaudeThemeActive;
-    setIsClaudeThemeActive(newState);
-    
-    if (newState) {
-      setTheme("claude-theme");
-      applyThemeClass("claude-theme");
-      localStorage.setItem("theme", "claude-theme"); // Ensure local storage is updated
-      
-      toast({
-        title: "🤖 Giao diện Claude đã được kích hoạt",
-        description: "Vinh danh trợ lý AI mạnh mẽ đã hỗ trợ phát triển dự án này. Cảm ơn Claude!",
-        duration: 5000,
-      });
-      
-      playSound('easter');
-    } else {
-      // Switch back to light theme when deactivating Claude theme
-      setTheme("light");
-      applyThemeClass("light");
-      localStorage.setItem("theme", "light"); // Ensure local storage is updated
-      
-      // Ensure we remove the claude-theme class
-      document.documentElement.classList.remove("claude-theme");
-      
-      toast({
-        title: "Đã tắt giao diện Claude",
-      });
-    }
-    
-    // Emit custom event for sidebar to detect theme change
-    window.dispatchEvent(new CustomEvent('themeChange', { 
-      detail: { theme: newState ? 'claude-theme' : 'light' } 
-    }));
-  }, [isClaudeThemeActive, setTheme, applyThemeClass, toast, playSound]);
-
-  // Add listener to automatically disable Claude theme when switching to other themes
-  useEffect(() => {
-    const handleThemeChange = (event: CustomEvent) => {
-      // If theme is changing to something other than light, dark, or claude-theme
-      if (event.detail && event.detail.theme) {
-        const newTheme = event.detail.theme;
-        if (newTheme !== 'claude-theme' && newTheme !== 'light' && newTheme !== 'dark') {
-          // Automatically disable Claude theme
-          if (isClaudeThemeActive) {
-            setIsClaudeThemeActive(false);
-          }
-        }
-      }
-    };
-    
-    window.addEventListener('themeChange', handleThemeChange as EventListener);
-    return () => {
-      window.removeEventListener('themeChange', handleThemeChange as EventListener);
-    };
-  }, [isClaudeThemeActive]);
-
-  // Modify keyboard listener to also detect Claude code
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // Handle Konami code
-      if (!isStarryNightUnlocked) {
-        setKonamiSequence(prev => {
-          const newSequence = [...prev, event.code];
-          
-          // Check if current sequence matches the beginning of konami code
-          const isValidKonamiSequence = konamiCode.slice(0, newSequence.length).every((key: string, index: number) => key === newSequence[index]);
-          
-          if (!isValidKonamiSequence) {
-            // Reset if sequence is wrong
-            return [];
-          }
-
-          // Play feedback sound for correct key
-          playSound('konami');
-
-          // Check if complete sequence is entered
-          if (newSequence.length === konamiCode.length) {
-            // Use setTimeout to avoid updating during render
-            setTimeout(() => {
-              unlockStarryNight();
-            }, 0);
-            return [];
-          }
-
-          // Show hint after 5 correct keys
-          if (newSequence.length === 5) {
-            setShowKonamiHint(true);
-            setTimeout(() => setShowKonamiHint(false), 3000);
-          }
-
-          return newSequence;
-        });
-      }
-
-      // Handle Claude code
-      setClaudeSequence(prev => {
-        const newSequence = [...prev, event.code];
-        
-        // Check if current sequence matches the beginning of claude code
-        const isValidClaudeSequence = claudeCode.slice(0, newSequence.length).every((key: string, index: number) => key === newSequence[index]);
-        
-        if (!isValidClaudeSequence) {
-          // Reset if sequence is wrong
-          return [];
-        }
-
-        // Check if complete sequence is entered
-        if (newSequence.length === claudeCode.length) {
-          // Use setTimeout to avoid updating during render
-          setTimeout(() => {
-            toggleClaudeTheme();
-          }, 0);
-          return [];
-        }
-
-        return newSequence;
-      });
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isStarryNightUnlocked, playSound, konamiCode, claudeCode, unlockStarryNight, toggleClaudeTheme]);
 
   return (
     <AuthGuard>
