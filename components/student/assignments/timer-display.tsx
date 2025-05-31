@@ -20,8 +20,11 @@ export function TimerDisplay({ timer, onTimeExpired }: TimerDisplayProps) {
   const [showWarning, setShowWarning] = useState<boolean>(false);
   const [isExpired, setIsExpired] = useState<boolean>(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const endTimeRef = useRef<number | null>(null);
   const warningThresholdRef = useRef<number>(0);
+  const lastUpdateTimeRef = useRef<number>(Date.now());
+  const wasTabActiveRef = useRef<boolean>(true);
   
   // Format time display
   const formatTimeDisplay = useCallback((totalSeconds: number): string => {
@@ -38,6 +41,14 @@ export function TimerDisplay({ timer, onTimeExpired }: TimerDisplayProps) {
     ].join(':');
   }, []);
   
+  // Save current end time to localStorage
+  const saveTimerState = useCallback(() => {
+    if (endTimeRef.current) {
+      const timerKey = getTimerStorageKey(timer);
+      localStorage.setItem(timerKey, endTimeRef.current.toString());
+    }
+  }, [timer]);
+  
   // Update timer function defined outside useEffect to avoid recreation
   const updateTimer = useCallback(() => {
     if (!endTimeRef.current) return;
@@ -48,6 +59,9 @@ export function TimerDisplay({ timer, onTimeExpired }: TimerDisplayProps) {
     
     // Update display
     setDisplayTime(formatTimeDisplay(secondsRemaining));
+    
+    // Save last update time
+    lastUpdateTimeRef.current = now;
     
     // Check for warning
     if (msRemaining > 0 && msRemaining <= warningThresholdRef.current) {
@@ -61,11 +75,45 @@ export function TimerDisplay({ timer, onTimeExpired }: TimerDisplayProps) {
         intervalRef.current = null;
       }
       
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      
       const timerKey = getTimerStorageKey(timer);
       localStorage.removeItem(timerKey);
       setIsExpired(true);
+      return;
     }
-  }, [formatTimeDisplay, timer]);
+    
+    // Schedule next update precisely to the next second
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    
+    const nextSecondDelay = 1000 - (now % 1000);
+    timeoutRef.current = setTimeout(() => {
+      updateTimer();
+    }, nextSecondDelay);
+    
+    // Save timer state periodically (every 5 seconds)
+    if (now - lastUpdateTimeRef.current >= 5000) {
+      saveTimerState();
+    }
+  }, [formatTimeDisplay, timer, saveTimerState]);
+  
+  // Handle tab visibility changes
+  const handleVisibilityChange = useCallback(() => {
+    const isTabActive = document.visibilityState === 'visible';
+    
+    if (isTabActive && !wasTabActiveRef.current) {
+      // Tab became visible again after being hidden
+      // Recalculate timer immediately to ensure accuracy
+      updateTimer();
+    }
+    
+    wasTabActiveRef.current = isTabActive;
+  }, [updateTimer]);
   
   // Handle expiration separately to avoid direct router updates during render
   useEffect(() => {
@@ -76,10 +124,15 @@ export function TimerDisplay({ timer, onTimeExpired }: TimerDisplayProps) {
   
   // Initialize timer
   useEffect(() => {
-    // Clear any existing interval
+    // Clear any existing interval and timeout
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
+    }
+    
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
     }
     
     const timerKey = getTimerStorageKey(timer);
@@ -114,17 +167,48 @@ export function TimerDisplay({ timer, onTimeExpired }: TimerDisplayProps) {
     // Set initial display immediately
     updateTimer();
     
-    // Start the interval that updates every second
-    intervalRef.current = setInterval(updateTimer, 1000);
+    // Add visibility change listener
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Set up heartbeat interval (every 10 seconds) as a backup
+    // This ensures the timer keeps running even if the timeout is delayed
+    intervalRef.current = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        updateTimer();
+      }
+    }, 10000);
     
     // Clean up on unmount
     return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
+      
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      
+      // Save timer state on unmount
+      saveTimerState();
     };
-  }, [timer, updateTimer]);
+  }, [timer, updateTimer, handleVisibilityChange, saveTimerState]);
+  
+  // Save timer state before unload/refresh
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      saveTimerState();
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [saveTimerState]);
   
   // Toggle minimized state
   const toggleMinimized = useCallback(() => {

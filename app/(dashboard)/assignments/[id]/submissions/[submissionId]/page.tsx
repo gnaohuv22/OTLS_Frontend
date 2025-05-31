@@ -50,7 +50,6 @@ export default function SubmissionDetailPage() {
           return false;
         }
       } catch (error) {
-        console.error('Error checking submission access:', error);
         toast({
           variant: 'destructive',
           title: 'Lỗi',

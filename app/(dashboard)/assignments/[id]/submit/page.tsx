@@ -67,17 +67,23 @@ export default function AssignmentSubmitPage() {
         const isExam = response.data.timer && response.data.timer !== "0";
         
         if (user?.userID && isExam) {
-          // Only check for existing submissions if it's an exam (has timer and timer !== "0")
-          const submissionResponse = await getSubmissionsByUserId(user.userID);
-          
-          if (submissionResponse.data && submissionResponse.data.submissions) {
-            const existingSubmission = submissionResponse.data.submissions.find(
-              (sub: any) => sub.assignmentId === assignmentId
-            );
+          try {
+            // Only check for existing submissions if it's an exam (has timer and timer !== "0")
+            const submissionResponse = await getSubmissionsByUserId(user.userID);
             
-            if (existingSubmission) {
-              setHasSubmission(true);
+            if (submissionResponse?.data?.submissions) {
+              const existingSubmission = submissionResponse.data.submissions.find(
+                (sub: any) => sub.assignmentId === assignmentId
+              );
+              
+              if (existingSubmission) {
+                setHasSubmission(true);
+              }
             }
+          } catch (submissionError) {
+            // Log the error but don't redirect - assume no submissions if API fails
+            console.error('Error fetching user submissions:', submissionError);
+            // Don't set hasSubmission to true or redirect - let user continue
           }
         }
       } catch (error) {
@@ -151,7 +157,7 @@ export default function AssignmentSubmitPage() {
           <p>Bài tập này không tồn tại hoặc đã bị xóa.</p>
           <Button 
             onClick={() => router.push('/assignments')}
-            variant="outline"
+            className="border border-gray-300 bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800"
           >
             Quay lại danh sách bài tập
           </Button>
@@ -179,7 +185,7 @@ export default function AssignmentSubmitPage() {
           <div className="p-4 border-b sticky top-0 bg-background/80 backdrop-blur-sm z-10">
             <div className="container mx-auto flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" onClick={handleGoBack} className="shrink-0">
+                <Button className="bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800" size="icon" onClick={handleGoBack}>
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
                 <div>
@@ -187,7 +193,7 @@ export default function AssignmentSubmitPage() {
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <span>{assignment.subject?.subjectName || "N/A"}</span>
                     {isExam && (
-                      <Badge variant="destructive" className="ml-2">
+                      <Badge className="bg-red-500 text-white hover:bg-red-600 ml-2">
                         Bài kiểm tra
                       </Badge>
                     )}

@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, Save } from "lucide-react";
 import { addSubmission, getAssignmentById } from "@/lib/api/assignment";
 import { useToast } from "@/components/ui/use-toast";
-import { CautionSystem } from "./caution-system";
+import { CautionSystem, exitFullscreenMode } from "./caution-system";
 import EditorComponent from "@/components/shared/editor-component";
 import { useRouter } from 'next/navigation';
 import { TimerDisplay } from '@/components/student/assignments/timer-display';
@@ -163,7 +163,8 @@ export function TextSubmission({
     };
   }, [content, draftKey, isExam]);
 
-  const handleSubmit = async (forced: boolean = false) => {
+  // Handle submission - ensure validation works for both normal and forced submissions
+  const handleSubmit = useCallback(async (forced: boolean = false) => {
     setIsSubmitting(true);
     
     if (forced) {
@@ -174,32 +175,49 @@ export function TextSubmission({
         description: "Bài làm của bạn đã bị nộp tự động do vi phạm quy định làm bài.",
       });
     }
-    
+
     try {
-      // Create submission data
+      // Format the content for submission
+      // For forced submissions, add a warning banner to the content
+      const formattedContent = forced 
+        ? `<div style="color: red; font-weight: bold; padding: 10px; border: 2px solid red; margin-bottom: 10px;">
+            BÀI LÀM NÀY BỊ BUỘC NỘP DO VI PHẠM QUY ĐỊNH LÀM BÀI.
+          </div>
+          ${content}`
+        : content;
+      
+      // Create submission data with all required fields
       const submissionData = {
         submittedAt: new Date().toISOString(),
-        status: forced ? "Stopped with caution" : "Submitted",
-        grade: 0, // To be graded by teacher
-        feedback: forced ? "Bài làm bị buộc nộp do vi phạm quy định làm bài 3 lần." : "",
-        answers: {},
-        textContent: content,
+        status:"Submitted",
+        grade: 0, // Text submissions are manually graded later
+        feedback: forced 
+          ? "Bài làm bị buộc nộp do vi phạm quy định làm bài."
+          : "",
+        // Ensure answers field is included to pass validation
+        answers: {}, 
+        textContent: formattedContent,
         assignmentId: assignmentId,
         userId: userId,
-        maxPoints: maxPoints // Include maxPoints for teacher's reference
+        // Additional fields to ensure validation passes
       };
+
+      console.log("Submitting text with data:", submissionData);
       
       // Submit to the API
       const response = await addSubmission(submissionData);
       
       if (response.data) {
-        // Clear the saved draft from localStorage since submission was successful
-        if (!isExam) {
-          try {
-            localStorage.removeItem(draftKey);
-          } catch (error) {
-            console.error("Error removing saved draft:", error);
-          }
+        // Exit fullscreen mode if in exam mode
+        if (isExam) {
+          exitFullscreenMode();
+        }
+        
+        // Clear the saved content from localStorage since submission was successful
+        try {
+          localStorage.removeItem(draftKey);
+        } catch (error) {
+          console.error("Error removing saved text content:", error);
         }
         
         // Clear timer from localStorage for exam mode
@@ -215,7 +233,9 @@ export function TextSubmission({
         
         toast({
           title: "Nộp bài thành công",
-          description: "Bài làm của bạn đã được gửi thành công",
+          description: forced 
+            ? "Bài làm đã được nộp do vi phạm quy định làm bài."
+            : "Bài làm của bạn đã được gửi thành công.",
         });
         
         // Notify parent component that submission is complete
@@ -225,22 +245,31 @@ export function TextSubmission({
         router.push('/assignments');
       }
     } catch (error) {
-      console.error("Error submitting assignment:", error);
+      console.error("Error submitting text:", error);
+      
+      // More informative error message
+      let errorMessage = "Không thể nộp bài. Vui lòng thử lại sau.";
+      if (error instanceof Error) {
+        errorMessage = `Lỗi: ${error.message}`;
+      }
+      
       toast({
         variant: "destructive",
         title: "Lỗi",
-        description: "Không thể nộp bài. Vui lòng thử lại sau.",
+        description: errorMessage,
       });
+      
+      // Even if there's an error, if it was a forced submission, we should still redirect
+      if (forced) {
+        setTimeout(() => {
+          router.push('/assignments');
+        }, 3000);
+      }
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [content, assignmentId, userId, onSubmissionComplete, router, toast, draftKey, isExam, timer]);
 
-  // Handle max cautions reached
-  const handleMaxCautionsReached = () => {
-    handleSubmit(true);
-  };
-  
   // Handle timer expiration
   const handleTimeExpired = () => {
     handleSubmit(true);
@@ -285,9 +314,8 @@ export function TextSubmission({
           </CardDescription>
           <CautionSystem 
             isActive={!isSubmitting} 
-            maxCautions={3} 
-            onMaxCautionsReached={handleMaxCautionsReached} 
             assignmentId={assignmentId}
+            isExam={isExam}
           />
         </CardHeader>
         <CardContent className="space-y-6">

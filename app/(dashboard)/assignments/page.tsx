@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { AuthGuard } from "@/components/auth/auth-guard";
 import { fadeInUp } from "@/components/assignments/shared/animation-variants";
@@ -22,112 +22,8 @@ export default function AssignmentsList() {
   const [userSubmissions, setUserSubmissions] = useState<Record<string, any>>({});
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchAssignments = async () => {
-      try {
-        setIsLoading(true);
-
-        if ((role === 'Student' || role === 'Teacher') && user?.userID) {
-          // For students and teachers, first get their classrooms
-          const classrooms = role === 'Student' 
-            ? await ClassroomService.getClassroomsByStudentId(user.userID)
-            : await ClassroomService.getClassroomsByTeacherId(user.userID);
-
-          if (classrooms && classrooms.length > 0) {
-            // Create an array to hold all assignments
-            const allAssignments: Assignment[] = [];
-
-            // For each classroom, fetch its assignments
-            for (const classroom of classrooms) {
-              try {
-                const response = await getAssignmentsByClassId(classroom.classroomId);
-
-                if (response.data && response.data.assignments) {
-                  // Transform API response to match our Assignment type
-                  const classAssignments: Assignment[] = response.data.assignments.map((item) => ({
-                    id: item.assignmentId,
-                    title: item.title,
-                    subject: classroom.name || "N/A", // Use classroom name as subject
-                    dueDate: item.dueDate,
-                    type: (item.assignmentType?.toLowerCase() === "quiz" ? "quiz" : "text") as "text" | "quiz",
-                    status: "assigned" as "assigned" | "completed" | "graded" | "overdue", // Default status 
-                    progress: 0, // Default progress
-                    className: classroom.name || "N/A",
-                    createdAt: item.createdAt,
-                    submissionStatus: "not_submitted", // Default submission status
-                    maxPoints: item.maxPoints || 100, // Add maximum points
-                  }));
-
-                  allAssignments.push(...classAssignments);
-                }
-              } catch (error) {
-                console.error(`Error fetching assignments for classroom ${classroom.classroomId}:`, error);
-              }
-            }
-
-            setAssignments(allAssignments);
-
-            // Fetch student's submissions to update assignment status
-            if (role === 'Student') {
-              fetchUserSubmissions(user.userID, allAssignments);
-            } else {
-              setIsLoading(false);
-            }
-          } else {
-            setAssignments([]);
-            setIsLoading(false);
-          }
-        } else {
-          // For admin and other roles, use the original implementation
-          const response = await getAllAssignments();
-
-          if (response.data) {
-            // Transform API response to match our Assignment type
-            const transformedAssignments: Assignment[] = response.data.map((item) => ({
-              id: item.assignmentId,
-              title: item.title,
-              subject: item.subject?.subjectName || "N/A",
-              dueDate: item.dueDate,
-              type: (item.assignmentType?.toLowerCase() === "quiz" ? "quiz" : "text") as "text" | "quiz",
-              status: "assigned" as "assigned" | "completed" | "graded" | "overdue", // Default status 
-              progress: 0, // Default progress
-              className: item.classes && item.classes[0] ? item.classes[0].name : "N/A",
-              createdAt: item.createdAt,
-              submissionStatus: "not_submitted", // Default submission status
-              maxPoints: item.maxPoints || 100, // Add maximum points
-            }));
-
-            setAssignments(transformedAssignments);
-
-            // For students, fetch their submissions
-            if (role === 'Student' && user?.userID) {
-              fetchUserSubmissions(user.userID, transformedAssignments);
-            } else {
-              setIsLoading(false);
-            }
-          }
-        }
-      } catch (error: any) {
-        if (error.response && error.response.status !== 404) {
-          toast({
-            variant: "destructive",
-            title: "Lỗi",
-            description: "Không thể tải danh sách bài tập.",
-          });
-        }
-        setIsLoading(false);
-      } finally {
-        if (isLoading) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    fetchAssignments();
-  }, [toast, role, user?.userID, isLoading]);
-
   // Fetch user submissions and update assignments with submission status
-  const fetchUserSubmissions = async (userId: string, assignmentsList: Assignment[]) => {
+  const fetchUserSubmissions = useCallback(async (userId: string, assignmentsList: Assignment[]) => {
     try {
       const response = await getSubmissionsByUserId(userId);
 
@@ -209,7 +105,103 @@ export default function AssignmentsList() {
     } catch (error) {
       console.error("Error fetching user submissions:", error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const fetchAssignments = async () => {
+      try {
+        setIsLoading(true);
+
+        if ((role === 'Student' || role === 'Teacher') && user?.userID) {
+          // For students and teachers, first get their classrooms
+          const classrooms = role === 'Student' 
+            ? await ClassroomService.getClassroomsByStudentId(user.userID)
+            : await ClassroomService.getClassroomsByTeacherId(user.userID);
+
+          if (classrooms && classrooms.length > 0) {
+            // Create an array to hold all assignments
+            const allAssignments: Assignment[] = [];
+
+            // For each classroom, fetch its assignments
+            for (const classroom of classrooms) {
+              try {
+                const response = await getAssignmentsByClassId(classroom.classroomId);
+
+                if (response.data && response.data.assignments) {
+                  // Transform API response to match our Assignment type
+                  const classAssignments: Assignment[] = response.data.assignments.map((item) => ({
+                    id: item.assignmentId,
+                    title: item.title,
+                    subject: classroom.name || "N/A", // Use classroom name as subject
+                    dueDate: item.dueDate,
+                    type: (item.assignmentType?.toLowerCase() === "quiz" ? "quiz" : "text") as "text" | "quiz",
+                    status: "assigned" as "assigned" | "completed" | "graded" | "overdue", // Default status 
+                    progress: 0, // Default progress
+                    className: classroom.name || "N/A",
+                    createdAt: item.createdAt,
+                    submissionStatus: "not_submitted", // Default submission status
+                    maxPoints: item.maxPoints || 100, // Add maximum points
+                  }));
+
+                  allAssignments.push(...classAssignments);
+                }
+              } catch (error) {
+                console.error(`Error fetching assignments for classroom ${classroom.classroomId}:`, error);
+              }
+            }
+
+            setAssignments(allAssignments);
+
+            // Fetch student's submissions to update assignment status
+            if (role === 'Student') {
+              await fetchUserSubmissions(user.userID, allAssignments);
+            }
+          } else {
+            setAssignments([]);
+          }
+        } else {
+          // For admin and other roles, use the original implementation
+          const response = await getAllAssignments();
+
+          if (response.data) {
+            // Transform API response to match our Assignment type
+            const transformedAssignments: Assignment[] = response.data.map((item) => ({
+              id: item.assignmentId,
+              title: item.title,
+              subject: item.subject?.subjectName || "N/A",
+              dueDate: item.dueDate,
+              type: (item.assignmentType?.toLowerCase() === "quiz" ? "quiz" : "text") as "text" | "quiz",
+              status: "assigned" as "assigned" | "completed" | "graded" | "overdue", // Default status 
+              progress: 0, // Default progress
+              className: item.classes && item.classes[0] ? item.classes[0].name : "N/A",
+              createdAt: item.createdAt,
+              submissionStatus: "not_submitted", // Default submission status
+              maxPoints: item.maxPoints || 100, // Add maximum points
+            }));
+
+            setAssignments(transformedAssignments);
+
+            // For students, fetch their submissions
+            if (role === 'Student' && user?.userID) {
+              await fetchUserSubmissions(user.userID, transformedAssignments);
+            }
+          }
+        }
+      } catch (error: any) {
+        if (error.response && error.response.status !== 404) {
+          toast({
+            variant: "destructive",
+            title: "Lỗi",
+            description: "Không thể tải danh sách bài tập.",
+          });
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAssignments();
+  }, [toast, role, user?.userID, fetchUserSubmissions]);
 
   // Lọc bài tập dựa trên search và filter
   const filteredAssignments = assignments.filter(assignment => {

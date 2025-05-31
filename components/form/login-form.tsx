@@ -207,6 +207,7 @@ export function LoginForm() {
             value={formData.username}
             onChange={handleInputChange}
             disabled={isLoading}
+            autoFocus
           />
         </div>
         {errors.username && (

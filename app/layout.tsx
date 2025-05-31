@@ -8,6 +8,7 @@ import ActivityTracker from '@/components/activity-tracker';
 import { LoadingSpinner } from "@/components/common/utils/loading-spinner";
 import { WithDebug } from "@/components/debug";
 import { StarryNightProvider } from "@/components/common/theme/starry-night-provider";
+import { Analytics } from "@vercel/analytics/next"
 import React from 'react';
 
 const inter = Inter({ subsets: ["latin"] });
@@ -25,6 +26,7 @@ export default function RootLayout({
   return (
     <html lang="vi" suppressHydrationWarning>
       <body className={inter.className}>
+
         <Providers>
           <StarryNightProvider>
             <ActivityTracker />
@@ -33,6 +35,8 @@ export default function RootLayout({
               <ClientLayout>
                 {children}
                 <Toaster />
+                <Analytics />
+
               </ClientLayout>
             </WithDebug>
           </StarryNightProvider>

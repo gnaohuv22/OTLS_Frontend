@@ -7,7 +7,7 @@ import { QuizSection, Question as QuizSectionQuestion } from "@/components/stude
 import { Loader2, Save, TextIcon, Type } from "lucide-react";
 import { addSubmission, getAssignmentById } from "@/lib/api/assignment";
 import { useToast } from "@/components/ui/use-toast";
-import { CautionSystem } from "./caution-system";
+import { CautionSystem, exitFullscreenMode } from "./caution-system";
 import { useRouter } from 'next/navigation';
 import { TimerDisplay } from '@/components/student/assignments/timer-display';
 import { QuizProgress } from '@/components/student/assignments/quiz-progress';
@@ -273,24 +273,36 @@ export function QuizSubmission({
         formattedAnswers[`question_${questionId}`] = answers[questionId] || "";
       });
 
-      // Create submission data
+      // Make sure we have required fields for validation
+      const finalGrade = forced ? Math.min(grade, maxPoints * 0.5) : grade; // Limit grade to 50% max if forced
+      
+      // Create submission data with all required fields
       const submissionData = {
         submittedAt: new Date().toISOString(),
-        status: forced ? "Stopped with caution" : "Graded",
-        grade: grade,
+        status: "Graded",
+        grade: finalGrade,
         feedback: forced 
-          ? "Bài làm bị buộc nộp do vi phạm quy định làm bài 3 lần."
+          ? "Bài làm bị buộc nộp do vi phạm quy định làm bài. Điểm tối đa bị giới hạn 50% do vi phạm."
           : `Tự động chấm điểm: ${fullCorrect} câu đúng hoàn toàn, ${partialCorrect} câu đúng một phần.`,
         answers: formattedAnswers,
-        textContent: "",
+        textContent: forced ? "BÀI THI BỊ BUỘC NỘP DO VI PHẠM QUY ĐỊNH NHIỀU LẦN." : "",
         assignmentId: assignmentId,
-        userId: userId
+        userId: userId,
+        // Additional fields to ensure validation passes
+        violationFlag: forced
       };
 
+      console.log("Submitting quiz with data:", submissionData);
+      
       // Submit to the API
       const response = await addSubmission(submissionData);
       
       if (response.data) {
+        // Exit fullscreen mode if in exam mode
+        if (isExam) {
+          exitFullscreenMode();
+        }
+      
         // Clear the saved answers from localStorage since submission was successful
         try {
           localStorage.removeItem(draftKey);
@@ -311,7 +323,7 @@ export function QuizSubmission({
         
         toast({
           title: "Nộp bài thành công",
-          description: `Điểm của bạn: ${grade.toFixed(1)}`,
+          description: forced ? "Bài thi đã được nộp do vi phạm quy định" : `Điểm của bạn: ${finalGrade.toFixed(1)}`,
         });
         
         // Notify parent component that submission is complete
@@ -322,21 +334,22 @@ export function QuizSubmission({
       }
     } catch (error) {
       console.error("Error submitting quiz:", error);
+      
+      // More informative error message
+      let errorMessage = "Không thể nộp bài. Vui lòng thử lại sau.";
+      if (error instanceof Error) {
+        errorMessage = `Lỗi: ${error.message}`;
+      }
+      
       toast({
         variant: "destructive",
         title: "Lỗi",
-        description: "Không thể nộp bài. Vui lòng thử lại sau.",
+        description: errorMessage,
       });
     } finally {
       setIsSubmitting(false);
     }
-  }, [answers, assignmentId, gradeQuiz, onSubmissionComplete, router, toast, userId, draftKey, quizQuestions, isExam, timer]);
-
-  // Handle max cautions reached - memoize to prevent recreating function on each render
-  const handleMaxCautionsReached = useCallback(() => {
-    // Submit with empty answers and banned message for forced submissions due to anti-cheat
-    handleSubmit(true);
-  }, [handleSubmit]);
+  }, [answers, assignmentId, gradeQuiz, onSubmissionComplete, router, toast, userId, draftKey, quizQuestions, isExam, timer, maxPoints]);
 
   // Handle timer expiration
   const handleTimeExpired = useCallback(() => {
@@ -401,9 +414,8 @@ export function QuizSubmission({
           </CardDescription>
           <CautionSystem 
             isActive={!isSubmitting} 
-            maxCautions={3} 
-            onMaxCautionsReached={handleMaxCautionsReached}
             assignmentId={assignmentId}
+            isExam={isExam}
           />
           {lastSaved && (
             <div className="text-xs text-muted-foreground mt-2">
