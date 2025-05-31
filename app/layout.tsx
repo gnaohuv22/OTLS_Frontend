@@ -9,6 +9,7 @@ import { LoadingSpinner } from "@/components/common/utils/loading-spinner";
 import { WithDebug } from "@/components/debug";
 import { StarryNightProvider } from "@/components/common/theme/starry-night-provider";
 import { DeepOceanProvider } from "@/components/common/theme/deep-ocean-provider";
+import { ClaudeThemeProvider } from "@/components/common/theme/claude-theme-provider";
 import { Analytics } from "@vercel/analytics/next"
 import React from 'react';
 
@@ -31,16 +32,17 @@ export default function RootLayout({
         <Providers>
           <StarryNightProvider>
             <DeepOceanProvider>
-              <ActivityTracker />
-              <LoadingSpinner />
-              <WithDebug position="bottom-right">
-                <ClientLayout>
-                  {children}
-                  <Toaster />
-                  <Analytics />
-
-                </ClientLayout>
-              </WithDebug>
+              <ClaudeThemeProvider>
+                <ActivityTracker />
+                <LoadingSpinner />
+                <WithDebug position="bottom-right">
+                  <ClientLayout>
+                    {children}
+                    <Toaster />
+                    <Analytics />
+                  </ClientLayout>
+                </WithDebug>
+              </ClaudeThemeProvider>
             </DeepOceanProvider>
           </StarryNightProvider>
         </Providers>

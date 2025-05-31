@@ -475,9 +475,9 @@ export default function SettingsPage() {
         const newSequence = [...prev, event.code];
         
         // Check if current sequence matches the beginning of konami code
-        const isValidSequence = konamiCode.slice(0, newSequence.length).every((key, index) => key === newSequence[index]);
+        const isValidKonamiSequence = konamiCode.slice(0, newSequence.length).every((key: string, index: number) => key === newSequence[index]);
         
-        if (!isValidSequence) {
+        if (!isValidKonamiSequence) {
           // Reset if sequence is wrong
           return [];
         }
@@ -570,6 +570,11 @@ export default function SettingsPage() {
 
   // Handle theme change with optimized synchronization
   const handleThemeChange = useCallback((value: string) => {
+    // If changing to a theme other than light or dark, disable Claude theme
+    if (value !== 'light' && value !== 'dark' && isClaudeThemeActive) {
+      setIsClaudeThemeActive(false);
+    }
+
     // Handle special starry night theme
     if (value === "starry-night") {
       activateStarryNight();
@@ -597,7 +602,7 @@ export default function SettingsPage() {
         duration: 3000,
       });
     }
-  }, [playSound, setTheme, isStarryNight, activateStarryNight, applyThemeClass, toast]);
+  }, [playSound, setTheme, isStarryNight, isClaudeThemeActive, activateStarryNight, applyThemeClass, toast]);
 
   // Effect to handle theme class application when theme changes
   useEffect(() => {
@@ -939,6 +944,7 @@ export default function SettingsPage() {
     if (newState) {
       setTheme("claude-theme");
       applyThemeClass("claude-theme");
+      localStorage.setItem("theme", "claude-theme"); // Ensure local storage is updated
       
       toast({
         title: "🤖 Giao diện Claude đã được kích hoạt",
@@ -948,9 +954,13 @@ export default function SettingsPage() {
       
       playSound('easter');
     } else {
-      // Switch back to dark theme when deactivating Claude theme
+      // Switch back to light theme when deactivating Claude theme
       setTheme("light");
       applyThemeClass("light");
+      localStorage.setItem("theme", "light"); // Ensure local storage is updated
+      
+      // Ensure we remove the claude-theme class
+      document.documentElement.classList.remove("claude-theme");
       
       toast({
         title: "Đã tắt giao diện Claude",
@@ -964,6 +974,27 @@ export default function SettingsPage() {
     }));
   }, [isClaudeThemeActive, setTheme, applyThemeClass, toast, playSound]);
 
+  // Add listener to automatically disable Claude theme when switching to other themes
+  useEffect(() => {
+    const handleThemeChange = (event: CustomEvent) => {
+      // If theme is changing to something other than light, dark, or claude-theme
+      if (event.detail && event.detail.theme) {
+        const newTheme = event.detail.theme;
+        if (newTheme !== 'claude-theme' && newTheme !== 'light' && newTheme !== 'dark') {
+          // Automatically disable Claude theme
+          if (isClaudeThemeActive) {
+            setIsClaudeThemeActive(false);
+          }
+        }
+      }
+    };
+    
+    window.addEventListener('themeChange', handleThemeChange as EventListener);
+    return () => {
+      window.removeEventListener('themeChange', handleThemeChange as EventListener);
+    };
+  }, [isClaudeThemeActive]);
+
   // Modify keyboard listener to also detect Claude code
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -973,9 +1004,9 @@ export default function SettingsPage() {
           const newSequence = [...prev, event.code];
           
           // Check if current sequence matches the beginning of konami code
-          const isValidSequence = konamiCode.slice(0, newSequence.length).every((key, index) => key === newSequence[index]);
+          const isValidKonamiSequence = konamiCode.slice(0, newSequence.length).every((key: string, index: number) => key === newSequence[index]);
           
-          if (!isValidSequence) {
+          if (!isValidKonamiSequence) {
             // Reset if sequence is wrong
             return [];
           }
@@ -1007,9 +1038,9 @@ export default function SettingsPage() {
         const newSequence = [...prev, event.code];
         
         // Check if current sequence matches the beginning of claude code
-        const isValidSequence = claudeCode.slice(0, newSequence.length).every((key, index) => key === newSequence[index]);
+        const isValidClaudeSequence = claudeCode.slice(0, newSequence.length).every((key: string, index: number) => key === newSequence[index]);
         
-        if (!isValidSequence) {
+        if (!isValidClaudeSequence) {
           // Reset if sequence is wrong
           return [];
         }
