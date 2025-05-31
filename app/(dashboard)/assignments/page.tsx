@@ -124,7 +124,7 @@ export default function AssignmentsList() {
     };
 
     fetchAssignments();
-  }, [toast, role, user?.userID]);
+  }, [toast, role, user?.userID, isLoading]);
 
   // Fetch user submissions and update assignments with submission status
   const fetchUserSubmissions = async (userId: string, assignmentsList: Assignment[]) => {
