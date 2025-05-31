@@ -141,7 +141,7 @@ export function Header() {
               )}
               <DropdownMenuSeparator />
               <DropdownMenuItem className="w-full text-center" asChild>
-                <Link href="/chat">
+                <Link href="#">
                   <Button variant="ghost" className="w-full">Xem tất cả tin nhắn</Button>
                 </Link>
               </DropdownMenuItem>

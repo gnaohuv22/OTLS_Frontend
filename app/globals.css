@@ -33,6 +33,9 @@
     --ring: 222.2 84% 4.9%;
 
     --radius: 0.5rem;
+    
+    /* Font size custom property */
+    --base-font-size: 16px;
   }
 
   .dark {
@@ -867,22 +870,106 @@
     transform: translateY(-2px);
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
   }
+
+  /* 🤖 CLAUDE THEME - ANTHROPIC INSPIRED */
+  .claude-theme {
+    --background: 261 38% 97%;
+    --foreground: 261 38% 15%;
+    --card: 261 38% 99%;
+    --card-foreground: 261 38% 15%;
+    --popover: 261 38% 99%;
+    --popover-foreground: 261 38% 15%;
+    --primary: 16 83% 63%;
+    --primary-foreground: 261 38% 97%;
+    --secondary: 261 20% 90%;
+    --secondary-foreground: 261 38% 15%;
+    --muted: 261 20% 92%;
+    --muted-foreground: 261 38% 45%;
+    --accent: 261 20% 90%;
+    --accent-foreground: 261 38% 15%;
+    --destructive: 0 85% 60%;
+    --destructive-foreground: 261 38% 97%;
+    --border: 261 20% 85%;
+    --input: 261 20% 92%;
+    --ring: 16 83% 63%;
+  }
+
+  /* Claude Theme Effects */
+  .claude-theme::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+      radial-gradient(circle at 20% 20%, rgba(173, 123, 233, 0.08) 0%, transparent 60%),
+      radial-gradient(circle at 80% 80%, rgba(215, 118, 85, 0.08) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: -1;
+  }
+  
+  /* Dark mode Claude Theme */
+  .dark.claude-theme {
+    --background: 261 38% 12%;
+    --foreground: 261 20% 92%;
+    --card: 261 38% 15%;
+    --card-foreground: 261 20% 92%;
+    --popover: 261 38% 15%;
+    --popover-foreground: 261 20% 92%;
+    --primary: 16 83% 63%;
+    --primary-foreground: 261 38% 12%;
+    --secondary: 261 20% 20%;
+    --secondary-foreground: 261 20% 92%;
+    --muted: 261 20% 18%;
+    --muted-foreground: 261 20% 65%;
+    --accent: 261 20% 20%;
+    --accent-foreground: 261 20% 92%;
+    --destructive: 0 85% 60%;
+    --destructive-foreground: 261 20% 92%;
+    --border: 261 20% 25%;
+    --input: 261 20% 18%;
+    --ring: 16 83% 63%;
+  }
+  
+  /* Claude Theme Dark Effects */
+  .dark.claude-theme::before {
+    background: 
+      radial-gradient(circle at 20% 20%, rgba(173, 123, 233, 0.15) 0%, transparent 60%),
+      radial-gradient(circle at 80% 80%, rgba(215, 118, 85, 0.15) 0%, transparent 60%);
+  }
+
+  /* Claude sidebar styles */
+  .claude-theme .claude-logo {
+    background-color: #f1f1fe; /* Light purple-ish background */
+    border-radius: 8px;
+  }
+  
+  .dark.claude-theme .claude-logo {
+    background-color: #352b5a; /* Dark purple background */
+    border-radius: 8px;
+  }
 }
 
 /* Font size utility classes */
 .text-small {
-  font-size: 0.875rem;
+  font-size: calc(var(--base-font-size) * 0.875);
   line-height: 1.5;
 }
 
 .text-normal {
-  font-size: 1rem;
+  font-size: var(--base-font-size);
   line-height: 1.5;
 }
 
 .text-large {
-  font-size: 1.125rem;
+  font-size: calc(var(--base-font-size) * 1.125);
   line-height: 1.5;
+}
+
+/* Apply font size to the whole document */
+html, body {
+  font-size: var(--base-font-size);
 }
 
 /* Reduce motion */

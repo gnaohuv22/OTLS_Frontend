@@ -25,7 +25,6 @@ const protectedPaths = [
   '/dashboard',
   '/profile',
   '/notifications',
-  '/chat',
   '/resources',
   '/courses',
   '/assignments',

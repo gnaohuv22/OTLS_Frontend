@@ -45,6 +45,20 @@ export function useNavigationLoading() {
           !anchor.target && // Loại trừ các link mở tab mới
           !anchor.hasAttribute('download') && // Loại trừ các link download
           !e.ctrlKey && !e.metaKey && !e.shiftKey) { // Loại trừ các click modifier
+          
+        // Kiểm tra nếu link này trỏ đến trang hiện tại thì không trigger loading
+        const hrefWithoutOrigin = anchor.href.replace(window.location.origin, '');
+        const currentPath = pathname + searchParams.toString();
+        
+        // So sánh URL đích với URL hiện tại, nếu giống nhau thì không hiển thị loading
+        if (hrefWithoutOrigin === currentPath || 
+            // Kiểm tra trường hợp có dấu "/" ở cuối URL
+            (hrefWithoutOrigin + '/') === currentPath || 
+            hrefWithoutOrigin === (currentPath + '/')) {
+          // Không hiển thị loading khi nhấn vào link của trang hiện tại
+          return;
+        }
+        
         startNavigating();
       }
     };
@@ -53,7 +67,7 @@ export function useNavigationLoading() {
     return () => {
       document.removeEventListener('click', handleClick);
     };
-  }, [startNavigating]);
+  }, [startNavigating, pathname, searchParams]);
 
   // Theo dõi các sự kiện navigation của trình duyệt
   useEffect(() => {

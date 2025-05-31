@@ -116,6 +116,9 @@ export default function SettingsPage() {
   const [isStarryNightUnlocked, setIsStarryNightUnlocked] = useState(false);
   const [showKonamiHint, setShowKonamiHint] = useState(false);
   const konamiCode = useMemo(() => ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyB', 'KeyA'], []);
+  const [claudeSequence, setClaudeSequence] = useState<string[]>([]);
+  const claudeCode = useMemo(() => ['KeyC', 'KeyL', 'KeyA', 'KeyU', 'KeyD', 'KeyE'], []);
+  const [isClaudeThemeActive, setIsClaudeThemeActive] = useState(false);
 
   // Easter egg state
   const [systemClickCount, setSystemClickCount] = useState(0);
@@ -337,7 +340,16 @@ export default function SettingsPage() {
       const savedFontSize = localStorage.getItem("otls_font_size");
       if (savedFontSize) {
         setFontSize(savedFontSize);
-        // Apply font size to document
+        // Apply font size to document using CSS custom property
+        const fontSizes = {
+          small: '14px',
+          normal: '16px',
+          large: '18px'
+        };
+        document.documentElement.style.setProperty('--base-font-size', 
+          fontSizes[savedFontSize as keyof typeof fontSizes]);
+        
+        // Still apply the class for additional styling
         document.documentElement.classList.remove("text-sm", "text-base", "text-lg");
         document.documentElement.classList.add(`text-${savedFontSize}`);
       }
@@ -538,12 +550,22 @@ export default function SettingsPage() {
     setFontSize(value);
     localStorage.setItem("otls_font_size", value);
 
-    // Apply font size to document
+    // Define font sizes in pixels based on selection
+    const fontSizes = {
+      small: '14px',
+      normal: '16px',
+      large: '18px'
+    };
+    
+    // Apply font size directly using CSS custom property
+    document.documentElement.style.setProperty('--base-font-size', fontSizes[value as keyof typeof fontSizes]);
+    
+    // Still apply the class for potential additional styling
     document.documentElement.classList.remove("text-sm", "text-base", "text-lg");
     document.documentElement.classList.add(`text-${value}`);
 
     playSound('switch');
-    window.location.reload();
+    // Removed window.location.reload() to avoid page refresh
   };
 
   // Handle theme change with optimized synchronization
@@ -727,6 +749,7 @@ export default function SettingsPage() {
         applyThemeClass("light");
         setFontSize("normal");
         localStorage.setItem("otls_font_size", "normal");
+        document.documentElement.style.setProperty('--base-font-size', '16px');
         document.documentElement.classList.remove("text-sm", "text-base", "text-lg");
         document.documentElement.classList.add("text-normal");
         break;
@@ -774,6 +797,7 @@ export default function SettingsPage() {
     // Reset font size
     setFontSize("normal");
     localStorage.setItem("otls_font_size", "normal");
+    document.documentElement.style.setProperty('--base-font-size', '16px');
     document.documentElement.classList.remove("text-sm", "text-base", "text-lg");
     document.documentElement.classList.add("text-normal");
 
@@ -899,6 +923,114 @@ export default function SettingsPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [showKeyboardShortcuts, handleThemeChange, resetAllSettings, saveAllSettings]);
 
+  // Add effect to check localStorage for Claude theme
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedTheme = localStorage.getItem("theme");
+      setIsClaudeThemeActive(savedTheme === "claude-theme");
+    }
+  }, []);
+
+  // Add toggleClaudeTheme function
+  const toggleClaudeTheme = useCallback(() => {
+    const newState = !isClaudeThemeActive;
+    setIsClaudeThemeActive(newState);
+    
+    if (newState) {
+      setTheme("claude-theme");
+      applyThemeClass("claude-theme");
+      
+      toast({
+        title: "🤖 Giao diện Claude đã được kích hoạt",
+        description: "Vinh danh trợ lý AI giúp phát triển dự án này. Cảm ơn Claude!",
+        duration: 5000,
+      });
+      
+      playSound('easter');
+    } else {
+      // Switch back to dark theme when deactivating Claude theme
+      setTheme("light");
+      applyThemeClass("light");
+      
+      toast({
+        title: "Đã tắt giao diện Claude",
+        description: "Trở lại giao diện bình thường",
+      });
+    }
+    
+    // Emit custom event for sidebar to detect theme change
+    window.dispatchEvent(new CustomEvent('themeChange', { 
+      detail: { theme: newState ? 'claude-theme' : 'light' } 
+    }));
+  }, [isClaudeThemeActive, setTheme, applyThemeClass, toast, playSound]);
+
+  // Modify keyboard listener to also detect Claude code
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Handle Konami code
+      if (!isStarryNightUnlocked) {
+        setKonamiSequence(prev => {
+          const newSequence = [...prev, event.code];
+          
+          // Check if current sequence matches the beginning of konami code
+          const isValidSequence = konamiCode.slice(0, newSequence.length).every((key, index) => key === newSequence[index]);
+          
+          if (!isValidSequence) {
+            // Reset if sequence is wrong
+            return [];
+          }
+
+          // Play feedback sound for correct key
+          playSound('konami');
+
+          // Check if complete sequence is entered
+          if (newSequence.length === konamiCode.length) {
+            // Use setTimeout to avoid updating during render
+            setTimeout(() => {
+              unlockStarryNight();
+            }, 0);
+            return [];
+          }
+
+          // Show hint after 5 correct keys
+          if (newSequence.length === 5) {
+            setShowKonamiHint(true);
+            setTimeout(() => setShowKonamiHint(false), 3000);
+          }
+
+          return newSequence;
+        });
+      }
+
+      // Handle Claude code
+      setClaudeSequence(prev => {
+        const newSequence = [...prev, event.code];
+        
+        // Check if current sequence matches the beginning of claude code
+        const isValidSequence = claudeCode.slice(0, newSequence.length).every((key, index) => key === newSequence[index]);
+        
+        if (!isValidSequence) {
+          // Reset if sequence is wrong
+          return [];
+        }
+
+        // Check if complete sequence is entered
+        if (newSequence.length === claudeCode.length) {
+          // Use setTimeout to avoid updating during render
+          setTimeout(() => {
+            toggleClaudeTheme();
+          }, 0);
+          return [];
+        }
+
+        return newSequence;
+      });
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isStarryNightUnlocked, playSound, konamiCode, claudeCode, unlockStarryNight, toggleClaudeTheme]);
+
   return (
     <AuthGuard>
       <div className="container py-6 space-y-6">
@@ -915,7 +1047,7 @@ export default function SettingsPage() {
                 <div className="flex-1">
                   <div className="flex items-center justify-center gap-2 text-muted-foreground">
                     <LockIcon className="h-5 w-5" />
-                    <span className="text-sm font-medium">Theme bí mật đang chờ được mở khóa...</span>
+                    <span className="text-sm font-medium">Giao diện bí mật đang chờ được mở khóa...</span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
                     Thử nhập một chuỗi phím huyền thoại để khám phá điều bất ngờ! 🎮
@@ -952,7 +1084,7 @@ export default function SettingsPage() {
               </div>
               <div className="mt-4 p-3 bg-secondary/50 rounded-lg">
                 <p className="text-muted-foreground text-xs">
-                  🎮 <strong>Bí mật:</strong> Thử nhập Konami Code (↑↑↓↓←→←→BA) để mở khóa theme đặc biệt!
+                  🎮 <strong>Bí mật:</strong> Thử nhập Konami Code để mở khóa một giao diện đặc biệt!
                 </p>
               </div>
             </CardContent>
@@ -1032,18 +1164,7 @@ export default function SettingsPage() {
                 {/* Theme selection */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="theme">Chế độ màu</Label>
-                    {isStarryNight && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={deactivateStarryNight}
-                        className="text-xs"
-                      >
-                        <SparklesIcon className="h-3 w-3 mr-1" />
-                        Tắt Starry Night
-                      </Button>
-                    )}
+                    {/* <Label htmlFor="theme">Chế độ màu</Label> */}
                   </div>
 
                   {/* Main theme grid */}

@@ -8,6 +8,7 @@ import ActivityTracker from '@/components/activity-tracker';
 import { LoadingSpinner } from "@/components/common/utils/loading-spinner";
 import { WithDebug } from "@/components/debug";
 import { StarryNightProvider } from "@/components/common/theme/starry-night-provider";
+import { DeepOceanProvider } from "@/components/common/theme/deep-ocean-provider";
 import { Analytics } from "@vercel/analytics/next"
 import React from 'react';
 
@@ -29,16 +30,18 @@ export default function RootLayout({
 
         <Providers>
           <StarryNightProvider>
-            <ActivityTracker />
-            <LoadingSpinner />
-            <WithDebug position="bottom-right">
-              <ClientLayout>
-                {children}
-                <Toaster />
-                <Analytics />
+            <DeepOceanProvider>
+              <ActivityTracker />
+              <LoadingSpinner />
+              <WithDebug position="bottom-right">
+                <ClientLayout>
+                  {children}
+                  <Toaster />
+                  <Analytics />
 
-              </ClientLayout>
-            </WithDebug>
+                </ClientLayout>
+              </WithDebug>
+            </DeepOceanProvider>
           </StarryNightProvider>
         </Providers>
       </body>
