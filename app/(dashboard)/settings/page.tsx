@@ -557,12 +557,12 @@ export default function SettingsPage() {
     // Apply font size directly using CSS custom property
     document.documentElement.style.setProperty('--base-font-size', fontSizes[value as keyof typeof fontSizes]);
     
-    // Still apply the class for potential additional styling
+    // Still apply the class for additional styling
     document.documentElement.classList.remove("text-sm", "text-base", "text-lg");
     document.documentElement.classList.add(`text-${value}`);
 
     playSound('switch');
-    // Removed window.location.reload() to avoid page refresh
+    // No need to reload the page
   };
 
   // Handle theme change with optimized synchronization
@@ -746,7 +746,11 @@ export default function SettingsPage() {
         applyThemeClass("light");
         setFontSize("normal");
         localStorage.setItem("otls_font_size", "normal");
+        
+        // Apply font size using CSS custom property
         document.documentElement.style.setProperty('--base-font-size', '16px');
+        
+        // Apply the class for additional styling
         document.documentElement.classList.remove("text-sm", "text-base", "text-lg");
         document.documentElement.classList.add("text-normal");
         break;
@@ -794,7 +798,11 @@ export default function SettingsPage() {
     // Reset font size
     setFontSize("normal");
     localStorage.setItem("otls_font_size", "normal");
+    
+    // Apply font size using CSS custom property
     document.documentElement.style.setProperty('--base-font-size', '16px');
+    
+    // Apply the class for additional styling
     document.documentElement.classList.remove("text-sm", "text-base", "text-lg");
     document.documentElement.classList.add("text-normal");
 

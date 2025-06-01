@@ -11,6 +11,7 @@ import { StarryNightProvider } from "@/components/common/theme/starry-night-prov
 import { DeepOceanProvider } from "@/components/common/theme/deep-ocean-provider";
 import { Analytics } from "@vercel/analytics/next"
 import React from 'react';
+import { FontSizeInitializer } from '@/components/common/theme/font-size-initializer';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -27,8 +28,8 @@ export default function RootLayout({
   return (
     <html lang="vi" suppressHydrationWarning>
       <body className={inter.className}>
-
         <Providers>
+          <FontSizeInitializer />
           <StarryNightProvider>
             <DeepOceanProvider>
               <ActivityTracker />
@@ -38,7 +39,6 @@ export default function RootLayout({
                   {children}
                   <Toaster />
                   <Analytics />
-
                 </ClientLayout>
               </WithDebug>
             </DeepOceanProvider>
