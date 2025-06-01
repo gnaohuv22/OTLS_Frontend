@@ -132,15 +132,15 @@ export function SubmissionDetail({
     
     switch (status.toLowerCase()) {
       case 'submitted':
-        return <Badge variant="outline">Đã nộp</Badge>;
+        return <Badge variant="outline" className="border-primary/30 text-primary dark:border-primary/50 dark:text-primary-foreground">Đã nộp</Badge>;
       case 'graded':
-        return <Badge variant="secondary">Đã chấm</Badge>;
+        return <Badge variant="secondary" className="bg-secondary/90 text-secondary-foreground">Đã chấm</Badge>;
       case 'stopped with caution':
-        return <Badge variant="destructive">Nộp bắt buộc</Badge>;
+        return <Badge variant="destructive" className="font-medium">Nộp bắt buộc</Badge>;
       case 'late':
-        return <Badge variant="outline" className="bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">Nộp muộn</Badge>;
+        return <Badge variant="outline" className="bg-amber-100 text-amber-800 dark:bg-amber-900/70 dark:text-amber-200 border-amber-300 dark:border-amber-700">Nộp muộn</Badge>;
       default:
-        return <Badge>{status}</Badge>;
+        return <Badge className="bg-primary/80 text-primary-foreground">{status}</Badge>;
     }
   };
 
@@ -151,21 +151,21 @@ export function SubmissionDetail({
     switch (assignment.assignmentType?.toLowerCase()) {
       case 'text':
         return (
-          <Badge variant="outline" className="bg-accent/50 text-accent-foreground">
+          <Badge variant="outline" className="bg-accent/50 text-accent-foreground border-accent/30 dark:border-accent/50 font-medium">
             <FileText className="h-3 w-3 mr-1" />
             Bài tập tự luận
           </Badge>
         );
       case 'quiz':
         return (
-          <Badge variant="outline" className="bg-secondary/70 text-secondary-foreground">
+          <Badge variant="outline" className="bg-secondary/70 text-secondary-foreground border-secondary/30 dark:border-secondary/50 font-medium">
             <List className="h-3 w-3 mr-1" />
             Trắc nghiệm
           </Badge>
         );
       default:
         return (
-          <Badge variant="outline">
+          <Badge variant="outline" className="border-primary/30 dark:border-primary/50 font-medium">
             Bài tập
           </Badge>
         );
@@ -188,9 +188,9 @@ export function SubmissionDetail({
       return (
         <div className="space-y-4">
           {Object.entries(submission.answers).map(([questionId, answer], index) => (
-            <div key={questionId} className="border rounded-md p-4">
-              <h4 className="font-medium mb-2">Câu hỏi {index + 1}</h4>
-              <p>Câu trả lời: {answer as string}</p>
+            <div key={questionId} className="border rounded-md p-4 bg-card shadow-sm">
+              <h4 className="font-medium mb-2 text-foreground">Câu hỏi {index + 1}</h4>
+              <p className="text-foreground">Câu trả lời: {answer as string}</p>
             </div>
           ))}
         </div>
@@ -218,7 +218,7 @@ export function SubmissionDetail({
 
           return (
             <div key={question.quizQuestionId} className="border rounded-md p-5 bg-card shadow-sm">
-              <h4 className="font-medium text-lg mb-3 text-slate-900 dark:text-slate-50">{question.question}</h4>
+              <h4 className="font-medium text-lg mb-3 text-foreground">{question.question}</h4>
               
               <div className="mt-2 space-y-2">
                 {question.options.map((option: string, optIndex: number) => {
@@ -228,22 +228,22 @@ export function SubmissionDetail({
                   // Determine styling based on correctness using theme variables with better contrast
                   let optionClass = "p-3 rounded-md flex items-center mb-1.5 transition-colors";
                   if (isStudentSelected && isCorrect) {
-                    optionClass += " bg-green-100 dark:bg-green-900/60 text-green-800 dark:text-green-100 border border-green-300 dark:border-green-700";
+                    optionClass += " bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-100 border border-green-300 dark:border-green-700 font-medium";
                   } else if (isStudentSelected && !isCorrect) {
-                    optionClass += " bg-red-100 dark:bg-red-900/60 text-red-800 dark:text-red-100 border border-red-300 dark:border-red-700";
+                    optionClass += " bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-100 border border-red-300 dark:border-red-700 font-medium";
                   } else if (!isStudentSelected && isCorrect) {
-                    optionClass += " bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-100 border border-blue-300 dark:border-blue-700";
+                    optionClass += " bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-100 border border-blue-300 dark:border-blue-700";
                   } else {
-                    optionClass += " bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700";
+                    optionClass += " bg-card border border-border text-foreground";
                   }
                   
                   return (
                     <div key={optIndex} className={optionClass}>
                       {isStudentSelected && isCorrect && (
-                        <CheckCircle className="h-4 w-4 mr-2 text-green-600 dark:text-green-400" />
+                        <CheckCircle className="h-4 w-4 mr-2 text-green-600 dark:text-green-400 flex-shrink-0" />
                       )}
                       {isStudentSelected && !isCorrect && (
-                        <XCircle className="h-4 w-4 mr-2 text-red-600 dark:text-red-400" />
+                        <XCircle className="h-4 w-4 mr-2 text-red-600 dark:text-red-400 flex-shrink-0" />
                       )}
                       <span className="flex-1">{option}</span>
                       {!isStudentSelected && isCorrect && (
@@ -415,11 +415,11 @@ export function SubmissionDetail({
               {!expandedGrading ? (
                 <>
                   <div className="flex items-center gap-4">
-                    <div className="font-medium">Điểm số:</div>
+                    <div className="font-medium text-foreground">Điểm số:</div>
                     <div className="text-xl">
                       {submission.status?.toLowerCase() === 'graded' ? (
                         <div className="flex items-center">
-                          <span className="font-semibold">
+                          <span className="font-semibold text-foreground">
                             {submission.grade.toFixed(1)}/{submission.assignment?.maxPoints || 100}
                           </span>
                           <span className="ml-2 text-sm text-muted-foreground">
@@ -427,16 +427,16 @@ export function SubmissionDetail({
                           </span>
                         </div>
                       ) : (
-                        'Chưa chấm điểm'
+                        <span className="text-muted-foreground">Chưa chấm điểm</span>
                       )}
                     </div>
                   </div>
                   
                   <div className="space-y-2">
-                    <div className="font-medium">Nhận xét:</div>
+                    <div className="font-medium text-foreground">Nhận xét:</div>
                     {submission.feedback ? (
                       <div 
-                        className="prose max-w-none dark:prose-invert prose-slate dark:prose-invert-slate rounded border border-border p-3 bg-card"
+                        className="prose max-w-none dark:prose-invert prose-slate dark:prose-invert-slate rounded border border-border p-3 bg-card/80 shadow-sm"
                         dangerouslySetInnerHTML={{ __html: submission.feedback }}
                       />
                     ) : (
@@ -446,7 +446,7 @@ export function SubmissionDetail({
                 </>
               ) : (
                 // Expanded grading UI
-                <div className="space-y-6 border p-4 rounded-md bg-card">
+                <div className="space-y-6 border p-4 rounded-md bg-card shadow-sm">
                   <div className="space-y-4">
                     <div>
                       <label htmlFor="grade" className="block text-sm font-medium mb-1 text-foreground">Điểm số:</label>
@@ -460,7 +460,7 @@ export function SubmissionDetail({
                           onChange={(e) => setGrade(Number(e.target.value))}
                           className="w-32"
                         />
-                        <span className="text-sm text-muted-foreground font-medium">
+                        <span className="text-sm text-foreground font-medium">
                           / {submission.assignment?.maxPoints || 100}
                         </span>
                         <span className="ml-2 text-xs text-muted-foreground">

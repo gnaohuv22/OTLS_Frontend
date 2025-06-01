@@ -110,7 +110,7 @@ export default function SubmissionDetailPage() {
     return (
       <AuthGuard>
         <div className="container mx-auto py-6 flex justify-center items-center min-h-[60vh]">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <Loader2 className="h-8 w-8 animate-spin text-primary/70" />
         </div>
       </AuthGuard>
     );
@@ -120,7 +120,9 @@ export default function SubmissionDetailPage() {
     return (
       <AuthGuard>
         <div className="container mx-auto py-6 flex justify-center items-center min-h-[60vh]">
-          <p className="text-destructive">Không có quyền truy cập hoặc không tìm thấy bài tập.</p>
+          <p className="text-destructive font-medium border border-destructive/30 bg-destructive/10 px-4 py-2 rounded-md">
+            Không có quyền truy cập hoặc không tìm thấy bài tập.
+          </p>
         </div>
       </AuthGuard>
     );
@@ -134,7 +136,7 @@ export default function SubmissionDetailPage() {
           resourceType="assignment"
           resourceId={assignmentId}
         >
-          <div className="container mx-auto py-6 space-y-6">
+          <div className="container mx-auto py-6 space-y-6 text-foreground">
             <SubmissionDetail
               submissionId={submissionId}
               assignmentId={assignmentId}
@@ -150,7 +152,7 @@ export default function SubmissionDetailPage() {
   // For teachers/admins, no need for StudentAuthGuard
   return (
     <AuthGuard>
-      <div className="container mx-auto py-6 space-y-6">
+      <div className="container mx-auto py-6 space-y-6 text-foreground">
         <SubmissionDetail
           submissionId={submissionId}
           assignmentId={assignmentId}

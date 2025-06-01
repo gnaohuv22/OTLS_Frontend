@@ -655,18 +655,18 @@ export const CautionSystem: FC<SecuritySystemProps> = ({
   if (showPermissionPrompt) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-background/90 backdrop-blur-sm z-50">
-        <div className="bg-card p-6 rounded-lg shadow-lg max-w-md w-full space-y-6">
+        <div className="bg-card p-6 rounded-lg shadow-lg max-w-md w-full space-y-6 border border-border">
           <div className="text-center space-y-2">
-            <AlertTriangle className="h-12 w-12 mx-auto text-amber-500" />
-            <AlertTitle className="text-2xl font-bold">Yêu cầu quyền truy cập</AlertTitle>
-            <AlertDescription>
+            <AlertTriangle className="h-12 w-12 mx-auto text-amber-500 dark:text-amber-400" />
+            <AlertTitle className="text-2xl font-bold text-foreground">Yêu cầu quyền truy cập</AlertTitle>
+            <AlertDescription className="text-foreground">
               Để đảm bảo tính bảo mật của bài thi, trình duyệt cần được cấp quyền toàn màn hình. 
               Vui lòng cho phép quyền truy cập khi trình duyệt hiển thị thông báo.
             </AlertDescription>
           </div>
           
           <div className="space-y-4">
-            <div className="bg-amber-50 dark:bg-amber-950 p-4 rounded-md text-amber-800 dark:text-amber-200 text-sm">
+            <div className="bg-amber-50 dark:bg-amber-950/70 p-4 rounded-md text-amber-800 dark:text-amber-200 text-sm border border-amber-200 dark:border-amber-800">
               <p className="font-medium">Lưu ý:</p>
               <ul className="list-disc pl-5 mt-1 space-y-1">
                 <li>Nếu trình duyệt không hiển thị thông báo, hãy kiểm tra cài đặt quyền truy cập của trình duyệt</li>
@@ -678,7 +678,8 @@ export const CautionSystem: FC<SecuritySystemProps> = ({
             <div className="flex justify-between">
               <Button 
                 onClick={() => window.history.back()} 
-                className="border border-gray-300 dark:border-gray-600 bg-transparent text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800"
+                variant="outline"
+                className="border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 Hủy bỏ
               </Button>
@@ -693,7 +694,8 @@ export const CautionSystem: FC<SecuritySystemProps> = ({
             <div className="flex justify-center mt-2">
               <Button 
                 onClick={() => setShowPermissionPrompt(false)}
-                className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 bg-transparent"
+                variant="ghost"
+                className="text-sm hover:bg-transparent hover:underline"
               >
                 Tiếp tục mà không cấp quyền
               </Button>
@@ -708,36 +710,38 @@ export const CautionSystem: FC<SecuritySystemProps> = ({
   if (showSetupScreen) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-background/90 backdrop-blur-sm z-50">
-        <div className="bg-card p-6 rounded-lg shadow-lg max-w-md w-full space-y-6">
+        <div className="bg-card p-6 rounded-lg shadow-lg max-w-md w-full space-y-6 border border-border">
           <div className="text-center space-y-2">
-            <AlertTriangle className="h-12 w-12 mx-auto text-amber-500" />
-            <AlertTitle className="text-2xl font-bold">Kiểm tra hệ thống</AlertTitle>
-            <AlertDescription>
+            <AlertTriangle className="h-12 w-12 mx-auto text-amber-500 dark:text-amber-400" />
+            <AlertTitle className="text-2xl font-bold text-foreground">Kiểm tra hệ thống</AlertTitle>
+            <AlertDescription className="text-foreground">
               Trước khi bắt đầu bài thi, chúng tôi cần kiểm tra hệ thống của bạn 
               để đảm bảo môi trường thi an toàn.
             </AlertDescription>
           </div>
           
           <div className="space-y-4">
-            <h3 className="font-medium">Yêu cầu kỹ thuật:</h3>
+            <h3 className="font-medium text-foreground">Yêu cầu kỹ thuật:</h3>
             <ul className="space-y-4">
               <li className="flex items-center gap-3">
                 <div className={`p-1.5 rounded-full ${
-                  isFullscreen ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
+                  isFullscreen 
+                  ? 'bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400' 
+                  : 'bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400'
                 }`}>
                   <MonitorX className="h-4 w-4" />
                 </div>
                 <div className="flex-1">
-                  <p className="font-medium">Chế độ toàn màn hình</p>
+                  <p className="font-medium text-foreground">Chế độ toàn màn hình</p>
                   <p className="text-sm text-muted-foreground">
                     {isFullscreen ? 'Chế độ toàn màn hình đang hoạt động' : 'Cần kích hoạt chế độ toàn màn hình'}
                   </p>
                 </div>
                 <div>
                   {isFullscreen ? (
-                    <div className="bg-green-100 text-green-600 px-2 py-1 rounded text-xs">Đạt</div>
+                    <div className="bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400 px-2 py-1 rounded text-xs font-medium border border-green-200 dark:border-green-800">Đạt</div>
                   ) : (
-                    <div className="bg-red-100 text-red-600 px-2 py-1 rounded text-xs">Lỗi</div>
+                    <div className="bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 px-2 py-1 rounded text-xs font-medium border border-red-200 dark:border-red-800">Lỗi</div>
                   )}
                 </div>
               </li>
@@ -745,8 +749,8 @@ export const CautionSystem: FC<SecuritySystemProps> = ({
           </div>
           
           <div className="space-y-4">
-            <div className="text-sm text-muted-foreground">
-              <p>Bằng việc tiếp tục, bạn đồng ý với:</p>
+            <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md border border-border">
+              <p className="font-medium text-foreground">Bằng việc tiếp tục, bạn đồng ý với:</p>
               <ul className="list-disc pl-5 mt-1 space-y-1">
                 <li>Không sử dụng phần mềm hỗ trợ gian lận</li>
                 <li>Không sử dụng thiết bị khác trong quá trình làm bài</li>
@@ -758,7 +762,8 @@ export const CautionSystem: FC<SecuritySystemProps> = ({
             <div className="flex justify-between">
               <Button 
                 onClick={() => window.history.back()} 
-                className="border border-gray-300 dark:border-gray-600 bg-transparent text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800"
+                variant="outline"
+                className="border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 Hủy bỏ
               </Button>
@@ -778,34 +783,34 @@ export const CautionSystem: FC<SecuritySystemProps> = ({
   return (
     <>
       {showAlert && (
-        <Alert variant="destructive" className="mb-4">
+        <Alert variant="destructive" className="mb-4 border-destructive/50 dark:border-destructive/70">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Cảnh báo</AlertTitle>
-          <AlertDescription>
+          <AlertTitle className="font-semibold">Cảnh báo</AlertTitle>
+          <AlertDescription className="text-destructive-foreground">
             {alertMessage}
           </AlertDescription>
         </Alert>
       )}
       
       {!isOnline && (
-        <Alert variant="destructive" className="mb-4">
+        <Alert variant="destructive" className="mb-4 border-destructive/50 dark:border-destructive/70">
           <Wifi className="h-4 w-4" />
-          <AlertTitle>Mất kết nối internet</AlertTitle>
-          <AlertDescription>
+          <AlertTitle className="font-semibold">Mất kết nối internet</AlertTitle>
+          <AlertDescription className="text-destructive-foreground">
             Vui lòng kiểm tra kết nối internet của bạn để tiếp tục làm bài.
           </AlertDescription>
         </Alert>
       )}
       
       {!isFullscreen && isExam && (
-        <div className="fixed inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-50">
-          <div className="bg-card p-6 rounded-lg shadow-lg max-w-md w-full space-y-4">
-            <AlertTitle className="text-xl font-bold text-center">Chú ý</AlertTitle>
-            <AlertDescription className="text-center">
+        <div className="fixed inset-0 flex items-center justify-center bg-background/90 backdrop-blur-sm z-50">
+          <div className="bg-card p-6 rounded-lg shadow-lg max-w-md w-full space-y-4 border border-border">
+            <AlertTitle className="text-xl font-bold text-center text-foreground">Chú ý</AlertTitle>
+            <AlertDescription className="text-center text-foreground">
               Bài thi yêu cầu chế độ toàn màn hình. 
               Vui lòng nhấn nút bên dưới để tiếp tục làm bài thi.
               {permissionDeniedRef.current && (
-                <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-950 rounded text-amber-600 dark:text-amber-400 text-sm">
+                <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-950/70 rounded text-amber-600 dark:text-amber-400 text-sm border border-amber-200 dark:border-amber-800">
                   Trình duyệt của bạn đã từ chối quyền sử dụng chế độ toàn màn hình. 
                   Vui lòng kiểm tra quyền truy cập và cài đặt của trình duyệt.
                 </div>
@@ -823,7 +828,8 @@ export const CautionSystem: FC<SecuritySystemProps> = ({
               <div className="flex justify-center mt-2">
                 <Button 
                   onClick={() => setShowSetupScreen(false)}
-                  className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 bg-transparent"
+                  variant="ghost"
+                  className="text-sm hover:bg-transparent hover:underline"
                 >
                   Tiếp tục mà không dùng toàn màn hình
                 </Button>
