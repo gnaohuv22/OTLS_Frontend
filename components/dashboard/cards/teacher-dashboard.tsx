@@ -131,7 +131,7 @@ const TeacherPendingAssignmentItem: React.FC<TeacherPendingAssignmentItemProps> 
                 </div>
                 <Progress value={submissionProgress} className="h-2" />
             </div>
-            <Link href={`/assignments/${assignment.id}/grade`}>
+            <Link href={`/assignments/${assignment.id}`}>
                 <Button size="sm" variant="outline" className="w-full">Chấm bài</Button>
             </Link>
         </div>

@@ -168,7 +168,6 @@ const PendingAssignmentItem: React.FC<PendingAssignmentItemProps> = React.memo((
       <p className="text-sm text-muted-foreground">{assignment.title}</p>
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between text-xs">
-          <span className="text-muted-foreground">Tiến độ</span>
           <span className="text-muted-foreground">Hạn nộp: {assignment.dueDate}</span>
         </div>
         <Progress value={assignment.progress} className="h-2" />
@@ -182,31 +181,6 @@ const PendingAssignmentItem: React.FC<PendingAssignmentItemProps> = React.memo((
   );
 });
 PendingAssignmentItem.displayName = 'PendingAssignmentItem';
-
-// Course Progress Item
-interface CourseProgressItemProps {
-  course: CourseProgressData;
-}
-const CourseProgressItem: React.FC<CourseProgressItemProps> = React.memo(({ course }) => {
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <h4 className="font-medium">{course.subject}</h4>
-        <span className="font-medium">{course.progress}%</span>
-      </div>
-      <div className="space-y-2">
-        <Progress value={course.progress} className="h-2" />
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>Đã hoàn thành {course.completedLessons} / {course.totalLessons} bài học</span>
-          <Link href={`/classes/${course.id}/progress`} className="text-primary hover:underline">
-            Xem chi tiết
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
-});
-CourseProgressItem.displayName = 'CourseProgressItem';
 
 // Error Display Component
 interface ErrorDisplayProps {
@@ -607,28 +581,6 @@ export function StudentDashboard() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Course Progress */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Tiến độ khóa học</CardTitle>
-          <CardDescription>Theo dõi tiến độ học tập của bạn</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-8">
-            {courseProgress.length > 0 ? (
-              courseProgress.map((course, index) => (
-                <CourseProgressItem
-                  key={`${course.id}-${index}`}
-                  course={course}
-                />
-              ))
-            ) : (
-              <EmptyState message="Chưa có dữ liệu tiến độ khóa học" icon={BarChart3} />
-            )}
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
