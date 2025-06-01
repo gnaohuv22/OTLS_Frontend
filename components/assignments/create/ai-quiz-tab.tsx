@@ -1,4 +1,4 @@
-import React, { useRef, useCallback, memo, useState, useEffect } from 'react';
+import React, { useRef, useCallback, memo, useState, useEffect, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -142,7 +142,8 @@ const AIQuizTab = memo(function AIQuizTab() {
       e.stopPropagation();
     }
 
-    if (!aiPrompt && !state.aiOriginalFile) {
+    // Kiểm tra xem có ít nhất một trong hai (file hoặc prompt)
+    if (!aiPrompt?.trim() && !state.aiOriginalFile) {
       toast({
         variant: 'destructive',
         title: 'Thiếu nội dung',
@@ -200,11 +201,24 @@ const AIQuizTab = memo(function AIQuizTab() {
       // Kiểm tra xem có file không
       const originalFile = state.aiOriginalFile;
       
+      // Luôn thêm user prompt nếu có, bất kể có file hay không
+      if (aiPrompt && aiPrompt.trim()) {
+        requestData.userPrompt = aiPrompt;
+      }
+      
       if (originalFile) {
         // Nếu là PDF và đã có base64
         if ((originalFile.type === 'application/pdf' || originalFile.name.endsWith('.pdf')) && pdfBase64) {
           requestData.pdfBase64 = pdfBase64;
           requestData.pdfMimeType = originalFile.type || 'application/pdf';
+          
+          // Thêm context từ aiPrompt nếu có
+          if (aiPrompt && aiPrompt.trim() && !requestData.userPrompt) {
+            requestData.userPrompt = `Tôi đang tải lên một tài liệu PDF. ${aiPrompt}`;
+          } else if (aiPrompt && aiPrompt.trim()) {
+            // Nếu đã có userPrompt, chỉ cần thêm thông tin file
+            requestData.userPrompt = `Tôi đang tải lên một tài liệu PDF và yêu cầu: ${requestData.userPrompt}`;
+          }
         } 
         // Với file docx, cần parse thành văn bản vì Gemini không hỗ trợ trực tiếp
         else if (originalFile.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || 
@@ -212,8 +226,13 @@ const AIQuizTab = memo(function AIQuizTab() {
           try {
             // Parse docx to text
             const textContent = await extractTextFromFile(originalFile);
-            // Use the text content as user prompt instead of sending file directly
-            requestData.userPrompt = `Tạo câu hỏi trắc nghiệm dựa trên nội dung sau: ${textContent}`;
+            
+            // Kết hợp prompt của người dùng với nội dung file
+            if (aiPrompt && aiPrompt.trim()) {
+              requestData.userPrompt = `${requestData.userPrompt}\n\nDựa trên nội dung tài liệu sau:\n\n${textContent}`;
+            } else {
+              requestData.userPrompt = `Tạo câu hỏi trắc nghiệm dựa trên nội dung sau:\n\n${textContent}`;
+            }
           } catch (err) {
             console.error('Error parsing docx file:', err);
             toast({
@@ -237,10 +256,24 @@ const AIQuizTab = memo(function AIQuizTab() {
               requestData.fileBase64 = base64Data;
               requestData.fileMimeType = mimeType;
               requestData.fileName = originalFile.name;
+              
+              // Thêm context từ aiPrompt nếu có
+              if (aiPrompt && aiPrompt.trim() && !requestData.userPrompt) {
+                requestData.userPrompt = `Tôi đang tải lên một tài liệu ${mimeType}. ${aiPrompt}`;
+              } else if (aiPrompt && aiPrompt.trim()) {
+                // Nếu đã có userPrompt, chỉ cần thêm thông tin file
+                requestData.userPrompt = `Tôi đang tải lên một tài liệu ${mimeType} và yêu cầu: ${requestData.userPrompt}`;
+              }
             } else {
               // For unsupported formats, extract text and send as prompt
               const textContent = await extractTextFromFile(originalFile);
-              requestData.userPrompt = `Tạo câu hỏi trắc nghiệm dựa trên nội dung sau: ${textContent}`;
+              
+              // Kết hợp prompt của người dùng với nội dung file
+              if (aiPrompt && aiPrompt.trim()) {
+                requestData.userPrompt = `${requestData.userPrompt}\n\nDựa trên nội dung tài liệu sau:\n\n${textContent}`;
+              } else {
+                requestData.userPrompt = `Tạo câu hỏi trắc nghiệm dựa trên nội dung sau:\n\n${textContent}`;
+              }
             }
           } catch (err) {
             console.error('Error processing file:', err);
@@ -253,10 +286,17 @@ const AIQuizTab = memo(function AIQuizTab() {
             return;
           }
         }
-      } else {
-        // Nếu không có file, sử dụng text prompt
-        requestData.userPrompt = aiPrompt;
+      } else if (!aiPrompt || !aiPrompt.trim()) {
+        // Nếu không có file và không có prompt
+        toast({
+          variant: 'destructive',
+          title: 'Thiếu nội dung',
+          description: 'Vui lòng nhập chủ đề hoặc tải lên tài liệu để tạo câu hỏi.',
+        });
+        setAiGenerating(false);
+        return;
       }
+      // Else: Nếu chỉ có aiPrompt, đã được gán ở dòng đầu tiên
 
       // Gọi API để generate câu hỏi
       const response = await fetch('/api/ai/generate-questions', {
@@ -390,6 +430,19 @@ const AIQuizTab = memo(function AIQuizTab() {
   // Filter quiz questions to show only AI-generated ones from the current session
   const aiGeneratedQuestions = generatedQuestions;
 
+  // Hiển thị trạng thái dựa trên input
+  const inputStatus = useMemo(() => {
+    if (aiPrompt?.trim() && state.aiOriginalFile) {
+      return "Tạo câu hỏi dựa trên prompt và tài liệu";
+    } else if (state.aiOriginalFile) {
+      return "Tạo câu hỏi từ tài liệu đã tải lên";
+    } else if (aiPrompt?.trim()) {
+      return "Tạo câu hỏi từ chủ đề đã nhập";
+    } else {
+      return "Nhập chủ đề hoặc tải tài liệu để tạo câu hỏi";
+    }
+  }, [aiPrompt, state.aiOriginalFile]);
+
   // Toggle collapsible state
   const toggleCollapsible = useCallback(() => {
     setIsOpen(prev => !prev);
@@ -488,7 +541,7 @@ const AIQuizTab = memo(function AIQuizTab() {
               <AlertTitle>Hướng dẫn sử dụng công cụ tạo câu hỏi AI</AlertTitle>
               <AlertDescription className="text-sm text-muted-foreground">
                 <ol className="list-decimal list-inside space-y-1 mt-2">
-                  <li>Tải lên tài liệu hoặc nhập chủ đề cho câu hỏi</li>
+                  <li>Tải lên tài liệu hoặc nhập chủ đề cho câu hỏi (hoặc kết hợp cả hai)</li>
                   <li>Điều chỉnh các thông số tạo câu hỏi (số lượng, độ khó...)</li>
                   <li>Nhấn "Tạo câu hỏi" để tự động tạo các câu hỏi trắc nghiệm</li>
                   <li>Kiểm tra các câu hỏi được tạo và nhấn "Thêm vào bài tập" để sử dụng</li>
@@ -511,18 +564,25 @@ const AIQuizTab = memo(function AIQuizTab() {
               {/* Prompt input */}
               <div className="space-y-2">
                 <Label htmlFor="ai-prompt" className="font-medium">
-                  Chủ đề câu hỏi
-                  {aiFileName && <span className="ml-1 text-muted-foreground"> - Sử dụng tài liệu: {aiFileName}</span>}
+                  Chủ đề hoặc hướng dẫn cho AI
+                  {aiFileName && <span className="ml-1 text-muted-foreground"> - Kết hợp với tài liệu: {aiFileName}</span>}
                 </Label>
                 <DebounceTextarea
                   id="ai-prompt"
-                  placeholder="Ví dụ: Tạo câu hỏi trắc nghiệm về phương trình bậc 2 cho học sinh lớp 9"
+                  placeholder={aiFileName 
+                    ? "Ví dụ: Tạo câu hỏi dựa trên phần 'Phương trình bậc 2' trong tài liệu" 
+                    : "Ví dụ: Tạo câu hỏi trắc nghiệm về phương trình bậc 2 cho học sinh lớp 9"}
                   value={aiPrompt || ''}
                   onValueChange={handlePromptChange}
                   className="min-h-[80px] text-sm resize-none"
                   debounceDelay={500}
                   disabled={aiGenerating}
                 />
+                {aiFileName && (
+                  <p className="text-xs text-muted-foreground">
+                    Kết hợp cả prompt và tài liệu sẽ giúp AI tập trung vào nội dung quan trọng trong tài liệu
+                  </p>
+                )}
               </div>
 
               {/* AI Settings */}
@@ -544,7 +604,7 @@ const AIQuizTab = memo(function AIQuizTab() {
                   {aiGenerating ? 'Đang tạo câu hỏi...' : (
                     aiGeneratedQuestions.length > 0
                       ? `${aiGeneratedQuestions.length} câu hỏi đã được tạo`
-                      : 'Nhấn nút để tạo câu hỏi tự động'
+                      : inputStatus
                   )}
                 </div>
 
@@ -578,10 +638,13 @@ const AIQuizTab = memo(function AIQuizTab() {
                       <Button
                         variant="default"
                         size="sm"
-                        className="gap-2 transition-all hover:scale-105"
+                        className={`gap-2 transition-all hover:scale-105 ${
+                          aiPrompt?.trim() && state.aiOriginalFile ? "bg-primary" : ""
+                        }`}
                         onClick={(e) => generateQuestionsWithAI(e)}
                         disabled={isGenerateDisabled}
                         type="button"
+                        title={inputStatus}
                       >
                         {aiGenerating ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
